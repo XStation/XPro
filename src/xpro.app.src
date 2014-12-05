@@ -1,4 +1,4 @@
-{application, XPro, [
+{application, xpro, [
 	{description, ""},
 	{vsn, "0.1.0"},
 	{id, "git"},
@@ -8,6 +8,6 @@
 		kernel,
 		stdlib
 	]},
-	{mod, {XPro_app, []}},
+	{mod, {xpro_app, []}},
 	{env, []}
 ]}.

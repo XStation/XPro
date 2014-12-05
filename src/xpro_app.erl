@@ -1,11 +1,11 @@
--module(XPro_app).
+-module(xpro_app).
 -behaviour(application).
 
 -export([start/2]).
 -export([stop/1]).
 
 start(_Type, _Args) ->
-	XPro_sup:start_link().
+	xpro_sup:start_link().
 
 stop(_State) ->
 	ok.

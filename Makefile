@@ -1,2 +1,2 @@
-PROJECT = XPro
+PROJECT = xpro
 include erlang.mk
