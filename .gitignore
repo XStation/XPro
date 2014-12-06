@@ -2,4 +2,5 @@ deps/*
 _rel/*
 log/*
 ebin/*
-
+erl_crash.dump
+.erlang.mk.packages.v2
