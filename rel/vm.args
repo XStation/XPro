@@ -1,6 +1,5 @@
 -name xpro@127.0.0.1
 -setcookie xpro
 -heart
--pa /opt/webapps/XPro
 -s reloader
 +K true
