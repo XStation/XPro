@@ -18,6 +18,7 @@ init({tcp, http}, _Req, _Opts) ->
 websocket_init(_TransportName, Req, _Opts) ->
 	erlang:start_timer(0, self(), <<"HI">>),
 	lager:warning("self:~p", [self()]),
+	lager:warning("req:~p", [Req]),
 	{ok, Req, {} }.
 
 
@@ -48,6 +49,7 @@ websocket_handle({binary, _Bin}, Req, State) ->
 
 websocket_handle(_Data, Req, State) ->
 lager:warning("any data :~p", [_Data]),
+	lager:warning("req:~p", [Req]),
 	{ok, Req, State}.
 
 
