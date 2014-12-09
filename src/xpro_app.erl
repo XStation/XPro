@@ -18,7 +18,7 @@ start(_Type, _Args) ->
 	Dispatch = cowboy_router:compile([
 		{'_', [
 			{"/xchat", xchat_websocket_handler, []},
-			{"/[...]", cowboy_static, {priv_dir, 'XPro', <<"">>}}
+			{"/[...]", cowboy_static, {priv_dir, 'xpro', <<"">>}}
 		]}
 	]),
 	{ok, _} = cowboy:start_http(http, 10, [{port, 8080}],
