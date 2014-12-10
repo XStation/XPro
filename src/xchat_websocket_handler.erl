@@ -69,6 +69,14 @@ websocket_terminate(_Reason, _Req, _State) ->
 	ok.
 
 
+%%===================Internal functions===============
+parse_xnest_name(Req) ->
+	ok.
+
+
+join_xnest(XNestName) ->
+	ok.
+
 send_self(Pid) ->
 	Pid ! {text, <<"Iam god!">>}.
 	
