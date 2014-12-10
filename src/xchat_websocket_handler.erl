@@ -12,14 +12,18 @@
 
 -export([send_self/1]).
 
+
+-type req() :: cowboy_http:req().
+-export_type([req/0]).
+
 init({tcp, http}, _Req, _Opts) ->
 	{upgrade, protocol, cowboy_websocket}.
 
 websocket_init(_TransportName, Req, _Opts) ->
-	erlang:start_timer(0, self(), <<"HI">>),
-	lager:warning("self:~p", [self()]),
-	lager:warning("req:~p", [Req]),
-	{ok, Req, {} }.
+	%erlang:start_timer(0, self(), <<"HI">>),
+	{XNestName, NewReq} = parse_xnest_name(Req),
+	join_xnest(XNestName),
+	{ok, NewReq, {} }.
 
 
 websocket_handle({text, <<"SEND#", ToUserid/binary>>}, Req, State) ->
@@ -70,11 +74,16 @@ websocket_terminate(_Reason, _Req, _State) ->
 
 
 %%===================Internal functions===============
+
+
+-spec parse_xnest_name(req()) -> {binary(), req()}.
 parse_xnest_name(Req) ->
-	ok.
+	cowboy_req:qs_val(<<"xnest">>, Req, <<>>).
 
 
+-spec join_xnest(binary()) -> ok.
 join_xnest(XNestName) ->
+	lager:info("~p", [XNestName]),
 	ok.
 
 send_self(Pid) ->
