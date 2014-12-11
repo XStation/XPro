@@ -62,8 +62,9 @@ websocket_handle(_Data, Req, State) ->
 
 %% @private
 %% @doc Receive Message from xnest and send it to client
-websocket_info({FromPid, {text, Msg}}, Req, State) ->
-	ResponseMsg  = {{<<"from">>, FromPid}, {<<"msg">>, Msg}},
+websocket_info({_FromPid, {text, Msg}}, Req, State) ->
+	%ResponseMsg  = {{<<"from">>, FromPid}, {<<"msg">>, Msg}},
+	ResponseMsg  = Msg,
 	{reply, {text, ResponseMsg}, Req, State};
 
 %% @private
@@ -89,9 +90,10 @@ parse_xnest_name(Req) ->
 
 %% @doc Join a xnest 
 -spec join_xnest(binary()) -> {ok, pid()}.
-join_xnest(XNestName) ->
-	{ok, Pid} = xnest_manager:join_xnest(XNestName),   %% I can know what format will be return by xnest_manager
-	{ok, Pid}.
+join_xnest(_XNestName) ->
+	%{ok, Pid} = xnest_manager:join_xnest(XNestName),   %% I can know what format will be return by xnest_manager
+	%{ok, Pid}.
+	{ok, self()}.
 
 
 %% @doc A test function 
