@@ -64,7 +64,9 @@
 
        // the user clicked the send button
        $('#console_send').click(function () {
-           ws_send($('#console_input').val());
+		   var time = new Date().getTime();
+		   var msg = $('#console_input').val() + time;
+           ws_send(msg);
        });
        
        $('#console_input').keyup(function (e) {
