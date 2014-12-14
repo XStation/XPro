@@ -62,9 +62,10 @@ websocket_handle(_Data, Req, State) ->
 
 %% @private
 %% @doc Receive Message from xnest and send it to client
-websocket_info({_FromPid, {text, Msg}}, Req, State) ->
+websocket_info({FromPid, {text, Msg}}, Req, State) ->
 	%ResponseMsg  = {{<<"from">>, FromPid}, {<<"msg">>, Msg}},
-	ResponseMsg  = Msg,
+	_FromPid = list_to_binary(pid_to_list(FromPid)),
+	ResponseMsg  = <<_FromPid/binary, ":", Msg/binary>>,
 	{reply, {text, ResponseMsg}, Req, State};
 
 %% @private
@@ -77,7 +78,10 @@ websocket_info(_Info, Req, State) ->
 	{ok, Req, State}.
 
 %% @private
-websocket_terminate(_Reason, _Req, _State) ->
+%% @doc leave xnest when websocket down!
+websocket_terminate(_Reason, _Req, State) ->
+	XNestPid = State#state.xnest_pid,
+	xnest:leave(XNestPid, self()),
 	ok.
 
 
