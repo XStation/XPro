@@ -45,14 +45,14 @@ websocket_init(_TransportName, Req, _Opts) ->
 %% @doc Receive Message from client and send it to XNest
 websocket_handle({text, Msg}, Req, State ) ->
 	XNestPid = State#state.xnest_pid,
-    XNestPid ! {self(), {text, Msg}},
+	xnest:input(XNestPid, {self(), text, Msg}),			%% Use xnest API to send message
 	{ok, Req, State};
 
 %% @private
 %% @doc Receive Message from client and send it to XNest, But unused
 websocket_handle({binary, Bin}, Req, State) ->
 	XNestPid = State#state.xnest_pid,
-    XNestPid ! {self(), {binary, Bin}},
+	xnest:input(XNestPid, {self(), binary, Bin}),		%% Use xnest API to send message
 	{ok, Req, State};
 
 %% @private
@@ -62,7 +62,7 @@ websocket_handle(_Data, Req, State) ->
 
 %% @private
 %% @doc Receive Message from xnest and send it to client
-websocket_info({FromPid, {text, Msg}}, Req, State) ->
+websocket_info({FromPid, text, Msg}, Req, State) ->
 	%ResponseMsg  = {{<<"from">>, FromPid}, {<<"msg">>, Msg}},
 	_FromPid = list_to_binary(pid_to_list(FromPid)),
 	ResponseMsg  = <<_FromPid/binary, ":", Msg/binary>>,
