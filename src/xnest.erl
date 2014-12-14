@@ -2,7 +2,7 @@
 -behaviour(gen_server).
 
 %% API.
--export([start_link/1, stop/1]).
+-export([start_link/0, stop/1]).
 -export([join/2, leave/2, input/2, status/1, status/2]).
 
 %% gen_server.
@@ -20,9 +20,9 @@
 %% API.
 
 %% @doc Start the xnest gen_server.
--spec start_link(atom()) -> {ok, pid()}.
-start_link(XNestName) ->
-	gen_server:start_link({local, XNestName}, ?MODULE, [], []).
+-spec start_link() -> {ok, pid()}.
+start_link() ->
+	gen_server:start_link(?MODULE, [], []).
 %% @doc Start the xnest gen_server.
 -spec stop(pid()) -> {ok, stopped}.
 stop(XNestPid) ->
