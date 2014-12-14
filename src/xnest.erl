@@ -39,9 +39,9 @@ leave(XNestPid, ClientPid) ->
     gen_server:call(XNestPid, {leave, ClientPid}).
 
 %% @doc Leave a xnest.
--spec input(pid(), {atom(), binary()}) -> {ok, binary()} | {error, binary()}.
-input(XNestPid, {text_msg, Message}) ->
-    gen_server:call(XNestPid, {text_msg, Message}).
+-spec input(pid(), {pid(), atom(), binary()}) -> {ok, binary()} | {error, binary()}.
+input(XNestPid, {From, text, Message}) ->
+    gen_server:cast(XNestPid, {From, text, Message}).
 
 %% @doc Get the number of clients in a xnest.
 -spec status(pid(), atom()) -> {ok, binary()} | {error, binary()}.
@@ -85,28 +85,6 @@ handle_call({leave, ClientPid}, _From, State) ->
     end,
     {reply, LeftResult, NewState};
 
-handle_call({text_msg, Message}, _From, State) ->
-    %%TBD, use lists:foldr for deploy message is not effective, we should think about another way.
-    Clients = State#state.clients,
-    Fun = fun(Client, AccIn) ->
-        case is_process_alive(Client) of
-            true ->
-                Client ! {text_msg, Message},
-                [Client | AccIn];
-            false ->
-                %%TBD, here should inform manager client ws is dead
-                AccIn
-        end
-    end,
-
-    {DeployMsgResult, NewClients} = try
-        NewClients_ = lists:foldr(Fun, [], Clients),
-        {{ok, <<"Message successfully deployed!">>}, NewClients_}
-    catch _:_ ->
-        {{error, <<"Error occured when deploy message!">>}, Clients}
-    end,
-	{reply, DeployMsgResult, State#state{clients = NewClients}};
-
 handle_call({status, client_counts}, _From, State) ->
     ClientCOunts = length(State#state.clients),
 	{reply, {ok, ClientCOunts}, State};
@@ -119,6 +97,28 @@ handle_call(_Request, _From, State) ->
 	{reply, ignored, State}.
 
 %handle_cast
+handle_cast({From, text, Message}, State) ->
+    %%TBD, use lists:foldr for deploy message is not effective, we should think about another way.
+    Clients = State#state.clients,
+    Fun = fun(Client, AccIn) ->
+        case is_process_alive(Client) of
+            true ->
+                Client ! {From, text, Message},
+                [Client | AccIn];
+            false ->
+                %%TBD, here should inform manager client ws is dead
+                AccIn
+        end
+    end,
+
+    {_DeployMsgResult, NewClients} = try
+        NewClients_ = lists:foldr(Fun, [], Clients),
+        {{ok, <<"Message successfully deployed!">>}, NewClients_}
+    catch _:_ ->
+        {{error, <<"Error occured when deploy message!">>}, Clients}
+    end,
+	{noreply, State#state{clients = NewClients}};
+
 handle_cast(_Msg, State) ->
 	{noreply, State}.
 
