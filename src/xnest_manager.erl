@@ -1,4 +1,5 @@
 -module(xnest_manager).
+-include("lager.hrl").
 -behaviour(gen_server).
 
 %% API.
@@ -28,12 +29,13 @@
 %% @doc Start the xnest_manager gen_server.
 -spec start_link() -> {ok, pid()}.
 start_link() ->
-	gen_server:start_link(?MODULE, [], []).
+	gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 %% @doc Get the xnest by name, a new one will be created if the specfied is not exists.
 -spec get_xnest(binary()) -> {ok, pid()}.
 get_xnest(XNestName) ->
-	gen_server:call(?MODULE, {get_xnest, XNestName}).
+	XNestPid = gen_server:call(?MODULE, {get_xnest, XNestName}),
+	{ok, XNestPid}.
 
 %% @doc Get current xnest number.
 -spec get_xnest_count() -> integer().
@@ -58,11 +60,13 @@ handle_call({get_xnest, XNestName}, _From,  State) ->
 			ExistXNest;
 		_ ->
 			{ok, NewXNest} = xnest:start_link(),
-			ets:insert(?TAB, [{XNestName, NewXNest}]),
-			ets:insert(?PID_INDEX, [{NewXNest, XNestName}]),
+			ets:insert_new(?TAB, {XNestName, NewXNest}),
+			ets:insert_new(?PID_INDEX, {NewXNest, XNestName}),
 			NewXNest	
 	end,
 	{reply, XNest, State};
+
+
 handle_call(_Request, _From, State) ->
 	{reply, ignored, State}.
 
