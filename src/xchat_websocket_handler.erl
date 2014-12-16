@@ -21,8 +21,6 @@
 
 %% type()
 -type req() :: cowboy_http:req().
--export_type([req/0]).
-
 
 
 %% @private
@@ -32,7 +30,7 @@ init({tcp, http}, _Req, _Opts) ->
 %% @private
 websocket_init(_TransportName, Req, _Opts) ->
 	{XNestName, NewReq} = parse_xnest_name(Req),
-	{ok, XNestPid} = join_xnest(XNestName),
+	{ok, XNestPid, JoinResult} = join_xnest(XNestName),
 	State = #state{
 		xnest_name	= XNestName,
 		xnest_pid	= XNestPid
@@ -94,12 +92,15 @@ parse_xnest_name(Req) ->
 
 %% @doc Join a xnest 
 -spec join_xnest(binary()) -> {ok, pid()}.
-join_xnest(_XNestName) ->
-	%{ok, Pid} = xnest_manager:join_xnest(XNestName),   %% I can know what format will be return by xnest_manager
-	%{ok, Pid}.
-	{ok, self()}.
+join_xnest(XNestName) ->
+	{ok, XNestPid} = xnest_manager:get_xnest(XNestName),   %% I can know what format will be return by xnest_manager
+	{ok, JoinResult} = xnest:join(Pid, self()),
+	send_welcome(self(), JoinResult),
+	{ok, XNestPid}.
 
+%% @doc send join message to client
+-spec send_welcome(pid(), binary()) -> any().
+send_welcome(SelfPid, WelcomeMsg) ->
+	SelfPid ! {SelfPid, text, WelComeMsg}.
+	
 
-%% @doc A test function 
-send_self(Pid) ->
-	Pid ! {text, <<"Iam god!">>}.
