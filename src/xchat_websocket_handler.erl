@@ -1,5 +1,5 @@
 -module(xchat_websocket_handler).
-%-include("lager.hrl").
+-include("lager.hrl").
 
 
 %% API
