@@ -47,22 +47,22 @@ get_xnest_count() ->
 %% @private
 init([]) ->
 	?TAB = ets:new(?TAB, [private, named_table]),
-	?PID_INDEX = ets:new(?TAB_INDEX, [private, named_table]),
+	?PID_INDEX = ets:new(?PID_INDEX, [private, named_table]),
 	process_flag(trap_exit, true),
 	{ok, #state{}}.
 
 %% @private
-handle_call({get_xnext, XNestName}, _From,  State=#state{monitors=Monitors}) ->
+handle_call({get_xnext, XNestName}, _From,  State) ->
 	XNest = case ets:lookup(?TAB, XNestName) of
 		[{_XNestName, ExistXNest}|_] ->
 			ExistXNest;
 		_ ->
 			{ok, NewXNest} = xnest:start_link(),
-			ets:insert(?TAB, [{XnestName, NewXNest}]),
+			ets:insert(?TAB, [{XNestName, NewXNest}]),
 			ets:insert(?PID_INDEX, [{NewXNest, XNestName}]),
 			NewXNest	
 	end,
-	{reply, XNest, State#state{monitors=NewMonitors}};
+	{reply, XNest, State};
 handle_call(_Request, _From, State) ->
 	{reply, ignored, State}.
 
@@ -74,13 +74,13 @@ handle_cast(_Msg, State) ->
 handle_info({'EXIT', FromPid, normal}, State) ->
 	remove_xnest(FromPid),
         {noreply, State};
-handle_info({'EXIT', FromPid, Reason}, State) ->
+handle_info({'EXIT', FromPid, _Reason}, State) ->
 	%% Temporarilly. Unnormal exit should be processed by 'ETS-TRANSFER'.
 	remove_xnest(FromPid),
         {noreply, State};
-handle_info({'ETS-TRANSFER', tid(), FromPid, _HeirData}, State) ->
+handle_info({'ETS-TRANSFER', _Tid, FromPid, _HeirData}, State) ->
 	remove_xnest(FromPid),
-	%% Use tid() start a new xnest.
+	%% Use tid start a new xnest.
 	{noreply, State};
 handle_info(_Info, State) ->
 	{noreply, State}.
@@ -105,4 +105,4 @@ remove_xnest(Pid) ->
 			ets:delete(?TAB, XNestName),
 			ets:delete(?PID_INDEX, Pid);
 		_ -> ok
-	end
+	end.
