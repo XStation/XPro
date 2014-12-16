@@ -16,6 +16,11 @@
 -record(state, {
     clients
 }).
+-record(client_info, {
+    pid
+}).
+
+-include("lager.hrl").
 
 %% API.
 
@@ -55,38 +60,33 @@ status(XNestPid) ->
 
 %% gen_server.
 init([]) ->
-	{ok, #state{clients=[]}}.
+    Clients = ets:new(xnest, [set]),
+	{ok, #state{clients=Clients}}.
 
 %handle_call
 handle_call({join, ClientPid}, _From, State) ->
-    ClientPidStr = pid_to_list(ClientPid),
     Clients = State#state.clients,
-    {JoinedResult, NewState} = case lists:member(ClientPid, Clients) of
-        true -> 
-            ResultBin = iolist_to_binary([ClientPidStr, " is already in the xnest!"]),
-            {{ok, ResultBin}, State};
-        false ->
-            NewClients = [ClientPid | Clients],
-            ResultBin = iolist_to_binary([ClientPidStr, " is successfully joined the xnest!"]),
-            {{ok, ResultBin}, State#state{clients = NewClients}}
-    end,
-    {reply, JoinedResult, NewState};
+
+    NewClient = {ClientPid, #client_info{pid = ClientPid}},
+    ClientPidStr = pid_to_list(ClientPid),
+
+    %%ets:insert return only true, consider to add try/catch
+    ets:insert(Clients, NewClient),
+    JoinedResult = {ok, iolist_to_binary([ClientPidStr, " is successfully joined the xnest!"])},
+
+    {reply, JoinedResult, State};
+
 handle_call({leave, ClientPid}, _From, State) ->
-    ClientPidStr = pid_to_list(ClientPid),
     Clients = State#state.clients,
-    {LeftResult, NewState} = case lists:member(ClientPid, Clients) of
-        true ->
-            NewClients = lists:delete(ClientPid, Clients),
-            ResultBin = iolist_to_binary([ClientPidStr, " is successfully left the xnest!"]),
-            {{ok, ResultBin}, State#state{clients = NewClients}};
-        false ->
-            ResultBin = iolist_to_binary([ClientPidStr, " is not in the xnest!"]),
-            {{ok, ResultBin}, State}
-    end,
-    {reply, LeftResult, NewState};
+    ClientPidStr = pid_to_list(ClientPid),
+
+    ets:delete(Clients, ClientPid),
+    LeftResult = {ok, iolist_to_binary([ClientPidStr, " is successfully left the xnest!"])},
+
+    {reply, LeftResult, State};
 
 handle_call({status, client_counts}, _From, State) ->
-    ClientCOunts = length(State#state.clients),
+    ClientCOunts = ets:info(State#state.clients, size),
 	{reply, {ok, ClientCOunts}, State};
 handle_call({status}, _From, State) ->
 	{reply, {ok, State}, State};
@@ -100,24 +100,27 @@ handle_call(_Request, _From, State) ->
 handle_cast({From, text, Message}, State) ->
     %%TBD, use lists:foldr for deploy message is not effective, we should think about another way.
     Clients = State#state.clients,
-    Fun = fun(Client, AccIn) ->
+    DeployFun = fun({Client, _ClientInfo}, AccIn) ->
         case is_process_alive(Client) of
             true ->
                 Client ! {From, text, Message},
-                [Client | AccIn];
+                AccIn;
             false ->
                 %%TBD, here should inform manager client ws is dead
-                AccIn
+                ets:delete(Clients, Client),
+                [Client|AccIn]
         end
     end,
 
-    {_DeployMsgResult, NewClients} = try
-        NewClients_ = lists:foldr(Fun, [], Clients),
-        {{ok, <<"Message successfully deployed!">>}, NewClients_}
+    {_DeployMsgResult, NewState} = try
+        %%TBD, here change sync to asyn simply by spawn, consider it again.
+        %_DeadClients = ets:foldr(DeployFun, [], Clients),
+        spawn(ets, foldr, [DeployFun, [], Clients]),
+        {{ok, <<"Message successfully deployed!">>}, State}
     catch _:_ ->
-        {{error, <<"Error occured when deploy message!">>}, Clients}
+        {{error, <<"Error occured when deploy message!">>}, State}
     end,
-	{noreply, State#state{clients = NewClients}};
+	{noreply, NewState};
 
 handle_cast(_Msg, State) ->
 	{noreply, State}.
@@ -131,3 +134,11 @@ terminate(_Reason, _State) ->
 
 code_change(_OldVsn, State, _Extra) ->
 	{ok, State}.
+
+%%
+%% Tests
+%%
+-ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
+
+-endif.
