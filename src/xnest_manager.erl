@@ -52,7 +52,7 @@ init([]) ->
 	{ok, #state{}}.
 
 %% @private
-handle_call({get_xnext, XNestName}, _From,  State) ->
+handle_call({get_xnest, XNestName}, _From,  State) ->
 	XNest = case ets:lookup(?TAB, XNestName) of
 		[{_XNestName, ExistXNest}|_] ->
 			ExistXNest;
