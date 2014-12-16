@@ -1,9 +1,9 @@
 -module(xchat_websocket_handler).
--include("lager.hrl").
+%-include("lager.hrl").
 
 
 %% API
--export([send_self/1]).
+
 
 %% websocket handler
 -export([init/3]).
@@ -30,7 +30,7 @@ init({tcp, http}, _Req, _Opts) ->
 %% @private
 websocket_init(_TransportName, Req, _Opts) ->
 	{XNestName, NewReq} = parse_xnest_name(Req),
-	{ok, XNestPid, JoinResult} = join_xnest(XNestName),
+	{ok, XNestPid} = join_xnest(XNestName),
 	State = #state{
 		xnest_name	= XNestName,
 		xnest_pid	= XNestPid
@@ -94,13 +94,13 @@ parse_xnest_name(Req) ->
 -spec join_xnest(binary()) -> {ok, pid()}.
 join_xnest(XNestName) ->
 	{ok, XNestPid} = xnest_manager:get_xnest(XNestName),   %% I can know what format will be return by xnest_manager
-	{ok, JoinResult} = xnest:join(Pid, self()),
+	{ok, JoinResult} = xnest:join(XNestPid, self()),
 	send_welcome(self(), JoinResult),
 	{ok, XNestPid}.
 
 %% @doc send join message to client
 -spec send_welcome(pid(), binary()) -> any().
 send_welcome(SelfPid, WelcomeMsg) ->
-	SelfPid ! {SelfPid, text, WelComeMsg}.
+	SelfPid ! {SelfPid, text, WelcomeMsg}.
 	
 
