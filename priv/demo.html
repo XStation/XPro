@@ -6,8 +6,16 @@
 
 <script src="http://cc.lenovows.com/assets/js/lib/jquery.js?bust=1" type="text/javascript"></script>
 <script type="text/javascript">
+
+
+	function sc(){
+		var div = document.getElementById("console_wrapper");
+	    //div.innerText += "\n" + (i++).toString(); //可以不要
+	    div.scrollTop = div.scrollHeight;
+	}
    var ws;
    $(document).ready(function () {
+		var s = setInterval("sc()", 500);
 
        if ("WebSocket" in window) {
            debug("Browser supports web sockets!", 'success');
@@ -42,7 +50,6 @@
            };
 
            ws.onmessage = function (evt) {
-console.log(evt);
                debug(evt.data, 'response'); // we got some data - show it omg!!
            };
 
@@ -68,11 +75,14 @@ console.log(evt);
 		   var time = new Date().getTime();
 		   var msg = $('#console_input').val() + time;
            ws_send(msg);
+           $('#console_input').val(' ');
        });
        
        $('#console_input').keyup(function (e) {
-           if(e.keyCode == 13) // enter is pressed
+           if(e.keyCode == 13){ // enter is pressed
                ws_send($('#console_input').val());
+           	   $('#console_input').val(' ');
+			}
        });
 
    });
@@ -90,15 +100,15 @@ console.log(evt);
  
 <h1>Web Socket Chat</h1> 
  
-<div id="server_wrapper"> 
+<div id="server_wrapper" > 
     <p>Server
-        <input type="text" name="host" id="host" value="ws://121.42.145.18:8080/xchat?xnest=thisisaname" /> 
+        <input type="text" name="host" id="host" value="ws://192.168.1.2:8080/xchat?xnest=thisisaname" /> 
         <input type="submit" name="host_connect" id="host_connect" value="重新连接" /> 
     </p>
 </div> 
  
-<div id="console_wrapper"> 
-    <pre id="console"></pre> 
+<div id="console_wrapper" style="overflow:auto; height:600px; border: 1px solid #999;"> 
+	<pre id="console"></pre>
     <input type="text" name="console_input" id="console_input" value="" /> 
     <input type="submit" name="console_send" id="console_send" value="Send" /> 
 </div> 
