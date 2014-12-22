@@ -17,7 +17,8 @@ start(_Type, _Args) ->
 
 	Dispatch = cowboy_router:compile([
 		{'_', [
-			{"/xchat", xchat_websocket_handler, []},
+			{"/xgate/websocket", xgate_websocket_handler, []},
+			{"/xgate/http", xgate_http_handler, []},
 			{"/[...]", cowboy_static, {priv_dir, 'xpro', <<"">>}}
 		]}
 	]),
