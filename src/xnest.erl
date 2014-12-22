@@ -3,7 +3,7 @@
 
 %% API.
 -export([start_link/0, stop/1]).
--export([join/2, leave/2, input/2, status/1, status/2]).
+-export([join/2, leave/2, input/2, status/1, status/2, members/1]).
 
 %% gen_server.
 -export([init/1]).
@@ -58,6 +58,13 @@ status(XNestPid, client_counts) ->
 status(XNestPid) ->
     gen_server:call(XNestPid, {status}).
 
+%% @doc Get members of a xnest.
+-spec members(pid())-> {ok, list()} | {error, binary()}.
+members(XNestPid) ->
+    gen_server:call(XNestPid, {members}).
+
+
+
 %% gen_server.
 init([]) ->
     Clients = ets:new(xnest, [set]),
@@ -90,6 +97,10 @@ handle_call({status, client_counts}, _From, State) ->
 	{reply, {ok, ClientCOunts}, State};
 handle_call({status}, _From, State) ->
 	{reply, {ok, State}, State};
+handle_call({members}, _From, State) ->
+	Members = [{<<"pid">>, <<"username">>}], %%needtodo: get real data
+	{reply, {ok, Members}, State};
+    
     
 handle_call({stop}, _From, State) ->
 	{stop, normal, {ok, stopped}, State};
