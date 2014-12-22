@@ -1,4 +1,4 @@
--module(xchat_websocket_handler).
+-module(xgate_websocket_handler).
 -include("lager.hrl").
 
 
