@@ -79,7 +79,7 @@ websocket_info(_Info, Req, State) ->
 %% @doc leave xnest when websocket down!
 websocket_terminate(_Reason, _Req, State) ->
 	XNestPid = State#state.xnest_pid,
-lager:info("~p leave xnest ~p", [self(), XNestPid]),
+lager:warning("~p leave xnest ~p", [self(), XNestPid]),
 	xnest:leave(XNestPid, self()),
 	ok.
 
