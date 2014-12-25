@@ -21,6 +21,7 @@
 
 %% type()
 -type req() :: cowboy_http:req().
+-type json() :: jsx:json_text().
 
 
 %% @private
@@ -61,9 +62,7 @@ websocket_handle(_Data, Req, State) ->
 %% @private
 %% @doc Receive Message from xnest and send it to client
 websocket_info({FromPid, text, Msg}, Req, State) ->
-	%ResponseMsg  = {{<<"from">>, FromPid}, {<<"msg">>, Msg}},
-	_FromPid = list_to_binary(pid_to_list(FromPid)),
-	ResponseMsg  = <<_FromPid/binary, ":", Msg/binary>>,
+	ResponseMsg = make_response(FromPid, State#state.xnest_name, Msg),
 	{reply, {text, ResponseMsg}, Req, State};
 
 %% @private
@@ -104,4 +103,26 @@ join_xnest(XNestName) ->
 send_welcome(SelfPid, WelcomeMsg) ->
 	SelfPid ! {SelfPid, text, WelcomeMsg}.
 	
+%% @doc generate response 
+-spec make_response(pid(), binary(), binary()) -> json().
+make_response(FromPid, Xnest, Msg) ->
+	Time = time2binary(erlang:localtime()),
+	Msg_ = [ {<<"from">>, pid_to_list(FromPid)}
+		,{<<"xnest">>, Xnest}
+		,{<<"payload">>, Msg}
+		,{<<"send_time">>, Time}
+	],
+	Response = jsx:encode(Msg_),
+lager:info("~p", [Response]),
+	Response.
 
+%% @doc time to binary
+-spec time2binary(tuple()) -> binary().
+time2binary({{Y, M, D}, {H, I, S}}) ->
+	Y_ = integer_to_binary(Y),
+	M_ = integer_to_binary(M),
+	D_ = integer_to_binary(D),
+	H_ = integer_to_binary(H),
+	I_ = integer_to_binary(I),
+	S_ = integer_to_binary(S),
+	<<Y_/binary, "-", M_/binary, "-", D_/binary, " ", H_/binary, ":", I_/binary, ":", S_/binary>>.
