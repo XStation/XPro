@@ -1,7 +1,7 @@
 -module(members).
 -include("../lager.hrl").
 
--behaviour(xgate_http_handler).
+%-behaviour(xgate_http_handler).
 
 
 -export([do/1]).
