@@ -79,6 +79,8 @@ websocket_info(_Info, Req, State) ->
 websocket_terminate(_Reason, _Req, State) ->
 	XNestPid = State#state.xnest_pid,
 lager:warning("~p leave xnest ~p", [self(), XNestPid]),
+	Msg = <<"leave">>,
+	xnest:input(XNestPid, {self(), text, Msg}),			%% Use xnest API to send leave message
 	xnest:leave(XNestPid, self()),
 	ok.
 
@@ -95,19 +97,16 @@ parse_xnest_name(Req) ->
 join_xnest(XNestName) ->
 	{ok, XNestPid} = xnest_manager:get_xnest(XNestName),   %% I can know what format will be return by xnest_manager
 	{ok, JoinResult} = xnest:join(XNestPid, self()),
-	send_welcome(self(), JoinResult),
+	xnest:input(XNestPid, {self(), text, JoinResult}),			%% Use xnest API to send join message
 	{ok, XNestPid}.
 
-%% @doc send join message to client
--spec send_welcome(pid(), binary()) -> any().
-send_welcome(SelfPid, WelcomeMsg) ->
-	SelfPid ! {SelfPid, text, WelcomeMsg}.
-	
+
 %% @doc generate response 
 -spec make_response(pid(), binary(), binary()) -> json().
 make_response(FromPid, Xnest, Msg) ->
 	Time = time2binary(erlang:localtime()),
-	Msg_ = [ {<<"from">>, pid_to_list(FromPid)}
+	From = list_to_binary(pid_to_list(FromPid)),
+	Msg_ = [ {<<"from">>, From}
 		,{<<"xnest">>, Xnest}
 		,{<<"payload">>, Msg}
 		,{<<"send_time">>, Time}
