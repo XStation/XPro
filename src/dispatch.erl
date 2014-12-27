@@ -7,5 +7,7 @@
 
 module(<<"members">>) ->
 	members;
+module(<<"history">>) ->
+	history;
 module(_) ->
 	<<"404">>.

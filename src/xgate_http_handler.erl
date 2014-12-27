@@ -43,6 +43,7 @@ lager:info("~p", [DecodeBody]),
 lager:info("~p", [RequestParams]),
 	Result = exec_method(RequestMethod, RequestParams),
 	Response = make_response(RequestId, Result),
+lager:error("3333333333333333"),
 	{ok, Req3} = cowboy_req:reply(200, [], Response, Req2),
 	{ok, Req3, State}.
 
@@ -59,10 +60,12 @@ terminate(_Reason, _Req, _State) ->
 exec_method(Method, Params) ->
 	Module = dispatch:module(Method),
 	Result = Module:do(Params),
+lager:error("111111111111111111"),
 	Result.
 
 %% @doc generate json response 
 -spec make_response(binary(), term()) -> json().
 make_response(Request_id, Result) ->
 	ResponseList = [{<<"request_id">>, Request_id},  {<<"result">>, Result}],
+lager:error("2222222222222222"),
 	jsx:encode(ResponseList).

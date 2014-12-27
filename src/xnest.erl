@@ -3,7 +3,7 @@
 
 %% API.
 -export([start_link/0, stop/1]).
--export([join/2, leave/2, input/2, status/1, status/2, members/1]).
+-export([join/2, leave/2, input/2, status/1, status/2, members/1, history/2]).
 
 %% gen_server.
 -export([init/1]).
@@ -63,6 +63,19 @@ status(XNestPid) ->
 members(XNestPid) ->
     gen_server:call(XNestPid, {members}).
 
+%% @doc Get history of a xnest.
+-spec history(pid(), number())-> {ok, list()} | {error, binary()}.
+history(_XNestPid, _Count) ->
+    %%可能直接调用hisotry模块的函数
+    FadeHistory = [[{<<"from">>, <<"<0.1.0">>}, {<<"payload">>, <<"我来了">>}, {<<"send_time">>, <<"2014-12-27">>}] 
+		  ,[{<<"from">>, <<"<0.1.0">>}, {<<"payload">>, <<"我来了">>}, {<<"send_time">>, <<"2014-12-27">>}]
+		  ],
+    %%gen_server:call(XNestPid, {history, Count}).
+lager:error("~p", [FadeHistory]),
+    {ok, FadeHistory}.
+
+
+
 
 
 %% gen_server.
@@ -98,7 +111,7 @@ handle_call({status, client_counts}, _From, State) ->
 handle_call({status}, _From, State) ->
 	{reply, {ok, State}, State};
 handle_call({members}, _From, State) ->
-	Members = [{<<"pid">>, <<"username">>}], %%needtodo: get real data
+	Members = [[{<<"pid">>, <<"pidvalue">>}, {<<"name">>,<<"namevalue">>}], [{<<"pid">>,<<"pid2">>}, {<<"name">>,<<"username2">>}]], %%needtodo: get real data
 	{reply, {ok, Members}, State};
     
     
