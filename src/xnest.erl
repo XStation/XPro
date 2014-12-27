@@ -71,7 +71,6 @@ history(_XNestPid, _Count) ->
 		  ,[{<<"from">>, <<"<0.1.0">>}, {<<"payload">>, <<"我来了">>}, {<<"send_time">>, <<"2014-12-27">>}]
 		  ],
     %%gen_server:call(XNestPid, {history, Count}).
-lager:error("~p", [FadeHistory]),
     {ok, FadeHistory}.
 
 
