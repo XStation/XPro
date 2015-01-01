@@ -87,20 +87,22 @@ handle_call({join, ClientPid}, _From, State) ->
     Clients = State#state.clients,
 
     NewClient = {ClientPid, #client_info{pid = ClientPid}},
-    ClientPidStr = pid_to_list(ClientPid),
+    %ClientPidStr = pid_to_list(ClientPid),
 
     %%ets:insert return only true, consider to add try/catch
     ets:insert(Clients, NewClient),
-    JoinedResult = {ok, iolist_to_binary([ClientPidStr, " is successfully joined the xnest!"])},
+    %JoinedResult = {ok, iolist_to_binary([ClientPidStr, " is successfully joined the xnest!"])},
+    JoinedResult = {ok, <<" is successfully joined the xnest!">>},
 
     {reply, JoinedResult, State};
 
 handle_call({leave, ClientPid}, _From, State) ->
     Clients = State#state.clients,
-    ClientPidStr = pid_to_list(ClientPid),
+    %ClientPidStr = pid_to_list(ClientPid),
 
     ets:delete(Clients, ClientPid),
-    LeftResult = {ok, iolist_to_binary([ClientPidStr, " is successfully left the xnest!"])},
+    %LeftResult = {ok, iolist_to_binary([ClientPidStr, " is successfully left the xnest!"])},
+    LeftResult = {ok, <<" successfully left the xnest!">>},
 
     {reply, LeftResult, State};
 
@@ -138,7 +140,7 @@ handle_cast({From, text, Message}, State) ->
     {_DeployMsgResult, NewState} = try
         %%TBD, here change sync to asyn simply by spawn, consider it again.
         %_DeadClients = ets:foldr(DeployFun, [], Clients),
-        spawn(ets, foldr, [DeployFun, [], Clients]),
+        spawn(ets, foldl, [DeployFun, [], Clients]),
         {{ok, <<"Message successfully deployed!">>}, State}
     catch _:_ ->
         {{error, <<"Error occured when deploy message!">>}, State}

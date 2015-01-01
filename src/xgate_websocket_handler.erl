@@ -112,7 +112,7 @@ make_response(FromPid, Xnest, Msg) ->
 		,{<<"send_time">>, Time}
 	],
 	Response = jsx:encode(Msg_),
-lager:info("~p", [Response]),
+%lager:info("~p", [Response]),
 	Response.
 
 %% @doc time to binary
