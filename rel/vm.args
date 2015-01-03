@@ -4,3 +4,50 @@
 -heart
 -s reloader
 +K true
+-P 134217727
+-Q 134217727
+-env ERL_MAX_PORTS 409600
+
+
+%-P number      set maximum number of processes on this node,
+%               valid range is [1024-134217727]
+%-Q number      set maximum number of ports on this node,
+%               valid range is [1024-134217727]
+%-R number      set compatibility release number,
+%               valid range [15-17]
+%-r             force ets memory block to be moved on realloc
+%-rg amount     set reader groups limit
+%-sbt type      set scheduler bind type, valid types are:
+%-stbt type     u|ns|ts|ps|s|nnts|nnps|tnnps|db
+%-sbwt val      set scheduler busy wait threshold, valid values are:
+%               none|very_short|short|medium|long|very_long.
+%-scl bool      enable/disable compaction of scheduler load,
+%               see the erl(1) documentation for more info.
+%-sct cput      set cpu topology,
+%               see the erl(1) documentation for more info.
+%-sub bool      enable/disable scheduler utilization balancing,
+%               see the erl(1) documentation for more info.
+%-sws val       set scheduler wakeup strategy, valid values are:
+%               default|legacy.
+%-swct val      set scheduler wake cleanup threshold, valid values are:
+%               very_lazy|lazy|medium|eager|very_eager.
+%-swt val       set scheduler wakeup threshold, valid values are:
+%               very_low|low|medium|high|very_high.
+%-sss size      suggested stack size in kilo words for scheduler threads,
+%               valid range is [4-8192]
+%-spp Bool      set port parallelism scheduling hint
+%-S n1:n2       set number of schedulers (n1), and number of
+%               schedulers online (n2), maximum for both
+%               numbers is 1024
+%-SP p1:p2      specify schedulers (p1) and schedulers online (p2)
+%               as percentages of logical processors configured and logical
+%               processors available, respectively
+%-t size        set the maximum number of atoms the emulator can handle
+%               valid range is [8192-0]
+%-T number      set modified timing level, valid range is [0-9]
+%-V             print Erlang version
+%-v             turn on chatty mode (GCs will be reported etc)
+%-W<i|w>        set error logger warnings mapping,
+%               see error_logger documentation for details
+%-zdbbl size    set the distribution buffer busy limit in kilobytes
+%               valid range is [1-2097151]
