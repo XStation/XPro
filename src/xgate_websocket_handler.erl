@@ -30,13 +30,14 @@ init({tcp, http}, _Req, _Opts) ->
 
 %% @private
 websocket_init(_TransportName, Req, _Opts) ->
-	{XNestName, NewReq} = parse_xnest_name(Req),
+	{XNestName, Req1} = parse_xnest_name(Req),
 	{ok, XNestPid} = join_xnest(XNestName),
 	State = #state{
 		xnest_name	= XNestName,
 		xnest_pid	= XNestPid
 	},
-	{ok, NewReq, State }.
+	Req2 = cowboy_req:set_resp_header(<<"access-control-allow-origin">>, <<"*">>, Req1),
+	{ok, Req2, State }.
 
 
 
