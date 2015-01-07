@@ -14,13 +14,17 @@
 -export([code_change/3]).
 
 -record(state, {
-    clients
+    clients,
+    idel_time
 }).
 -record(client_info, {
     pid
 }).
 
 -include("lager.hrl").
+
+-define(TTL, 5000).
+-define(IDEL_TIMEOUT, 600000).
 
 %% API.
 
@@ -73,14 +77,11 @@ history(_XNestPid, _Count) ->
     %%gen_server:call(XNestPid, {history, Count}).
     {ok, FadeHistory}.
 
-
-
-
-
 %% gen_server.
 init([]) ->
     Clients = ets:new(xnest, [set]),
-	{ok, #state{clients=Clients}}.
+    erlang:send_after(?TTL, self(), {tick}),
+	{ok, #state{clients=Clients, idel_time=0}}.
 
 %handle_call
 handle_call({join, ClientPid}, _From, State) ->
@@ -107,8 +108,8 @@ handle_call({leave, ClientPid}, _From, State) ->
     {reply, LeftResult, State};
 
 handle_call({status, client_counts}, _From, State) ->
-    ClientCOunts = ets:info(State#state.clients, size),
-	{reply, {ok, ClientCOunts}, State};
+    ClientCounts = ets:info(State#state.clients, size),
+	{reply, {ok, ClientCounts}, State};
 handle_call({status}, _From, State) ->
 	{reply, {ok, State}, State};
 handle_call({members}, _From, State) ->
@@ -151,6 +152,22 @@ handle_cast(_Msg, State) ->
 	{noreply, State}.
 
 %handle_info
+handle_info({tick}, State) ->
+    ClientCounts = ets:info(State#state.clients, size),
+    IdelTimeout = State#state.idel_time,
+    NewIdelTimeout = case ClientCounts of
+        0 -> IdelTimeout + ?TTL;
+        _ -> 0
+    end,
+
+    case NewIdelTimeout > ?IDEL_TIMEOUT of
+        true -> 
+            {stop, normal, State};
+        false -> 
+            erlang:send_after(?TTL, self(), {tick}),
+            {noreply, State#state{idel_time=NewIdelTimeout}}
+    end;
+
 handle_info(_Info, State) ->
 	{noreply, State}.
 
