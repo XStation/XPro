@@ -7,6 +7,8 @@
 
 module(<<"members">>) ->
 	members;
+module(<<"member_count">>) ->
+	member_count;
 module(<<"history">>) ->
 	history;
 module(_) ->
