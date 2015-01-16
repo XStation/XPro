@@ -42,7 +42,8 @@ websocket_init(_TransportName, Req, _Opts) ->
 		xnest_pid	= XNestPid
 	},
 	Req2 = cowboy_req:set_resp_header(<<"access-control-allow-origin">>, <<"*">>, Req1),
-	{ok, Req2, State }.
+	self() ! {members},		%% send a command to self 
+	{ok, Req2, State}.
 
 
 
@@ -50,7 +51,7 @@ websocket_init(_TransportName, Req, _Opts) ->
 %% @doc Receive Message from client and send it to XNest
 websocket_handle({text, Msg}, Req, State ) ->
 	XNestPid = State#state.xnest_pid,
-	xnest:input(XNestPid, {self(), text, Msg}),			%% Use xnest API to send message
+	xnest:input(XNestPid, {self(), text, {'normal', Msg}}),			%% Use xnest API to send message
 	{ok, Req, State};
 
 %% @private
@@ -64,6 +65,14 @@ websocket_handle({binary, Bin}, Req, State) ->
 websocket_handle(_Data, Req, State) ->
 	{ok, Req, State}.
 
+
+%% @private
+%% @doc Receive Message from self 
+websocket_info({members}, Req, State) ->
+	XNestPid = State#state.xnest_pid,
+	{ok, Count} = xnest:status(XNestPid, client_counts),
+	ResponseMsg = make_response(self(), State#state.xnest_name, {member_count, Count}),
+	{reply, {text, ResponseMsg}, Req, State};
 
 %% @private
 %% @doc Receive Message from xnest and send it to client
@@ -86,7 +95,7 @@ websocket_terminate(_Reason, _Req, State) ->
 	XNestPid = State#state.xnest_pid,
 lager:warning("~p leave xnest ~p", [self(), XNestPid]),
 	Msg = <<"leave">>,
-	xnest:input(XNestPid, {self(), text, Msg}),			%% Use xnest API to send leave message
+	xnest:input(XNestPid, {self(), text, {'leave', Msg}}),			%% Use xnest API to send leave message
 	xnest:leave(XNestPid, self()),
 	ok.
 
@@ -103,21 +112,22 @@ parse_xnest_name(Req) ->
 join_xnest(XNestName) ->
 	{ok, XNestPid} = xnest_manager:get_xnest(XNestName),   %% I can know what format will be return by xnest_manager
 	{ok, JoinResult} = xnest:join(XNestPid, self()),
-	xnest:input(XNestPid, {self(), text, JoinResult}),			%% Use xnest API to send join message
+	xnest:input(XNestPid, {self(), text, {'join', JoinResult}}),			%% Use xnest API to send join message
 	{ok, XNestPid}.
 
 
 %% @doc generate response 
 -spec make_response(pid(), binary(), binary()) -> json().
-make_response(FromPid, Xnest, Msg) ->
+make_response(FromPid, Xnest, {Type, Msg}) ->
 	Time = time2binary(erlang:localtime()),
 	From = list_to_binary(pid_to_list(FromPid)),
-	Msg_ = [ {<<"from">>, From}
+	Frame = [ {<<"from">>, From}
 		,{<<"xnest">>, Xnest}
+		,{<<"type">>, Type}
 		,{<<"payload">>, Msg}
 		,{<<"send_time">>, Time}
 	],
-	Response = jsx:encode(Msg_),
+	Response = jsx:encode(Frame),
 %lager:info("~p", [Response]),
 	Response.
 
@@ -131,3 +141,4 @@ time2binary({{Y, M, D}, {H, I, S}}) ->
 	I_ = integer_to_binary(I),
 	S_ = integer_to_binary(S),
 	<<Y_/binary, "-", M_/binary, "-", D_/binary, " ", H_/binary, ":", I_/binary, ":", S_/binary>>.
+
