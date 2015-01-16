@@ -28,6 +28,7 @@
 init({tcp, http}, _Req, _Opts) ->
 	{upgrade, protocol, cowboy_websocket};
 
+%% @private
 init({ssl, http}, _Req, _Opts) ->
 	{upgrade, protocol, cowboy_websocket}.
 
