@@ -113,7 +113,10 @@ handle_call({status, client_counts}, _From, State) ->
 handle_call({status}, _From, State) ->
 	{reply, {ok, State}, State};
 handle_call({members}, _From, State) ->
-	Members = [[{<<"pid">>, <<"pidvalue">>}, {<<"name">>,<<"namevalue">>}], [{<<"pid">>,<<"pid2">>}, {<<"name">>,<<"username2">>}]], %%needtodo: get real data
+    ClientsEts = State#state.clients,
+    Clients = ets:tab2list(ClientsEts),
+    Members = [  ClientPid || {ClientPid, _ClientInfo} <- Clients],
+	%Members = [[{<<"pid">>, <<"pidvalue">>}, {<<"name">>,<<"namevalue">>}], [{<<"pid">>,<<"pid3">>}, {<<"name">>,<<"username2">>}]], %%needtodo: get real data
 	{reply, {ok, Members}, State};
     
     
