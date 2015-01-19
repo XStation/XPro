@@ -4,9 +4,18 @@
 <title>Demo</title>
 <meta http-equiv="content-type" content="text/html;charset=utf-8">
 
-<link rel='stylesheet' href='http://121.42.145.18/css/style.css' /> 
-<link rel='stylesheet' href='http://121.42.145.18/css/font-awesome.min.css' />
-<script type="text/javascript"  data-main="http://121.42.145.18/js/config.js" src="http://121.42.145.18/js/libs/require.js"></script> 
+
+<!--config-->
+<script type="text/javascript">
+    chatConfig={
+      wsUrl:'ws://121.42.145.18:8080/xgate/websocket',
+      linkKey:'thisisaname',//chatRoom ID
+      serverUrl:'http://121.42.145.18'//web服务路径
+    } 
+</script> 
+<!-- 加载标签样式-->
+<script type="text/javascript"  data-main="http://121.42.145.18/js/chat"   src="http://121.42.145.18/js/libs/require.js"></script> 
+
 
 <script src="http://cc.lenovows.com/assets/js/lib/jquery.js?bust=1" type="text/javascript"></script>
 <script type="text/javascript">
