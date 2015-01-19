@@ -37,13 +37,14 @@ init({ssl, http}, _Req, _Opts) ->
 %% @private
 websocket_init(_TransportName, Req, _Opts) ->
 	{XNestName, Req1} = parse_xnest_name(Req),
+	self() ! {'self'},		%% send a command to self 
 	{ok, XNestPid} = join_xnest(XNestName),
 	State = #state{
 		xnest_name	= XNestName,
 		xnest_pid	= XNestPid
 	},
 	Req2 = cowboy_req:set_resp_header(<<"access-control-allow-origin">>, <<"*">>, Req1),
-	self() ! {members},		%% send a command to self 
+	self() ! {'member_count'},		%% send a command to self 
 	{ok, Req2, State}.
 
 
@@ -52,6 +53,7 @@ websocket_init(_TransportName, Req, _Opts) ->
 %% @doc Receive Message from client and send it to XNest
 websocket_handle({text, Msg}, Req, State ) ->
 	XNestPid = State#state.xnest_pid,
+lager:info("some one send a message:~ts", [Msg]),
 	xnest:input(XNestPid, {self(), text, {'normal', Msg}}),			%% Use xnest API to send message
 	{ok, Req, State};
 
@@ -68,11 +70,17 @@ websocket_handle(_Data, Req, State) ->
 
 
 %% @private
-%% @doc Receive Message from self 
-websocket_info({members}, Req, State) ->
+%% @doc Receive command from self, and send self message (like pid) to js client 
+websocket_info({'self'}, Req, State) ->
+	ResponseMsg = make_response(self(), State#state.xnest_name, {'self', pid2binary(self())}),
+	{reply, {text, ResponseMsg}, Req, State};
+
+%% @private
+%% @doc Receive members command from self 
+websocket_info({'member_count'}, Req, State) ->
 	XNestPid = State#state.xnest_pid,
 	{ok, Count} = xnest:status(XNestPid, client_counts),
-	ResponseMsg = make_response(self(), State#state.xnest_name, {member_count, Count}),
+	ResponseMsg = make_response(self(), State#state.xnest_name, {'member_count', Count}),
 	{reply, {text, ResponseMsg}, Req, State};
 
 %% @private
@@ -94,7 +102,6 @@ websocket_info(_Info, Req, State) ->
 %% @doc leave xnest when websocket down!
 websocket_terminate(_Reason, _Req, State) ->
 	XNestPid = State#state.xnest_pid,
-lager:warning("~p leave xnest ~p", [self(), XNestPid]),
 	Msg = <<"leave">>,
 	xnest:input(XNestPid, {self(), text, {'leave', Msg}}),			%% Use xnest API to send leave message
 	xnest:leave(XNestPid, self()),
@@ -121,7 +128,7 @@ join_xnest(XNestName) ->
 -spec make_response(pid(), binary(), binary()) -> json().
 make_response(FromPid, Xnest, {Type, Msg}) ->
 	Time = time2binary(erlang:localtime()),
-	From = list_to_binary(pid_to_list(FromPid)),
+	From = pid2binary(FromPid),
 	Frame = [ {<<"from">>, From}
 		,{<<"xnest">>, Xnest}
 		,{<<"type">>, Type}
@@ -129,7 +136,6 @@ make_response(FromPid, Xnest, {Type, Msg}) ->
 		,{<<"send_time">>, Time}
 	],
 	Response = jsx:encode(Frame),
-%lager:info("~p", [Response]),
 	Response.
 
 %% @doc time to binary
@@ -143,3 +149,6 @@ time2binary({{Y, M, D}, {H, I, S}}) ->
 	S_ = integer_to_binary(S),
 	<<Y_/binary, "-", M_/binary, "-", D_/binary, " ", H_/binary, ":", I_/binary, ":", S_/binary>>.
 
+%% @doc pid to binary
+-spec pid2binary(pid()) -> binary().
+pid2binary(Pid) -> list_to_binary(pid_to_list(Pid)).
