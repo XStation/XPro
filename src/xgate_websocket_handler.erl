@@ -128,18 +128,18 @@ websocket_terminate(_Reason, _Req, State) ->
 %% @doc Parse xnest Name from HTTP Req
 -spec parse_xnest_name(req()) -> {binary(), req()}.
 parse_xnest_name(Req) ->
-	cowboy_req:qs_val(<<"xnest">>, Req, <<>>).
+	cowboy_req:binding(xnest_name, Req, <<"default">>).
 
 %% @doc Parse client nickName from HTTP Req
 -spec parse_nickname(req()) -> {binary(), req()}.
 parse_nickname(Req) ->
-	cowboy_req:qs_val(<<"nickname">>, Req, <<"潜水员">>).
+	cowboy_req:qs_val(<<"nickname">>, Req, unicode:characters_to_binary("潜水员", unicode, utf8)).
 
 %% @doc Join a xnest 
 -spec join_xnest(binary(), binary()) -> {ok, pid()}.
 join_xnest(XNestName, NickName) ->
 	{ok, XNestPid} = xnest_manager:get_xnest(XNestName),   %% I can know what format will be return by xnest_manager
-lager:info("~s", [NickName]),
+lager:info("~ts", [NickName]),
 	{ok, _JoinResult} = xnest:join(XNestPid, self(), NickName),
 	xnest:input(XNestPid, {self(), text, {'join', NickName}}),			%% Use xnest API to send join message
 	{ok, XNestPid}.
