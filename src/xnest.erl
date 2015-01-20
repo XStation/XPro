@@ -41,7 +41,7 @@ stop(XNestPid) ->
 %% @doc Join a xnest.
 -spec join(pid(), pid()) -> {ok, binary()} | {error, binary()}.
 join(XNestPid, ClientPid) ->
-    join(XNestPid, ClientPid, "").
+    join(XNestPid, ClientPid, <<"">>).
 -spec join(pid(), pid(), term()) -> {ok, binary()} | {error, binary()}.
 join(XNestPid, ClientPid, Bindings) ->
     gen_server:call(XNestPid, {join, ClientPid, Bindings}).
