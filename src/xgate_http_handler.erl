@@ -29,18 +29,21 @@ init(_, Req, _Opts) ->
 %% @private
 handle(Req, State=#state{}) ->
 	{HttpMethod, Req1} = cowboy_req:method(Req),
-lager:info("~p", [HttpMethod]),
+lager:info("http method: ~p", [HttpMethod]),
 
 	{ok, HttpBody, Req2} = cowboy_req:body(Req1),
-lager:info("~p", [HttpBody]),
+lager:info(" http body: ~p", [HttpBody]),
 
 	DecodeBody = jsx:decode(HttpBody),
-lager:info("~p", [DecodeBody]),
+lager:info("decode body:~p", [DecodeBody]),
 
 	RequestId = proplists:get_value(<<"request_id">>, DecodeBody),
 	RequestMethod = proplists:get_value(<<"method">>, DecodeBody),
 	RequestParams = proplists:get_value(<<"params">>, DecodeBody),
 	Result = exec_method(RequestMethod, RequestParams),
+lager:info("exec result: ~p", [Result]),
+	Response = make_response(RequestId, Result),
+lager:info("response: ~p", [Response]),
 	Response = make_response(RequestId, Result),
 	{ok, Req3} = cowboy_req:reply(200, [], Response, Req2),
 	{ok, Req3, State}.
