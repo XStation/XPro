@@ -14,8 +14,9 @@
 
 
 -record(state, {
-	xnest_name = <<>> :: binary(),
-	xnest_pid  = <<>> :: pid()
+	nickname	= <<>> :: binary(),
+	xnest_name	= <<>> :: binary(),
+	xnest_pid	= <<>> :: pid()
 }).
 
 
@@ -37,15 +38,17 @@ init({ssl, http}, _Req, _Opts) ->
 %% @private
 websocket_init(_TransportName, Req, _Opts) ->
 	{XNestName, Req1} = parse_xnest_name(Req),
+	{NickName, Req2} = parse_nickname(Req1),
 	self() ! {'self'},		%% send a command to self 
-	{ok, XNestPid} = join_xnest(XNestName),
+	{ok, XNestPid} = join_xnest(XNestName, NickName),
 	State = #state{
+		nickname	= NickName,
 		xnest_name	= XNestName,
 		xnest_pid	= XNestPid
 	},
-	Req2 = cowboy_req:set_resp_header(<<"access-control-allow-origin">>, <<"*">>, Req1),
+	Req3 = cowboy_req:set_resp_header(<<"access-control-allow-origin">>, <<"*">>, Req2),
 	self() ! {'member_count'},		%% send a command to self 
-	{ok, Req2, State}.
+	{ok, Req3, State}.
 
 
 
@@ -53,7 +56,7 @@ websocket_init(_TransportName, Req, _Opts) ->
 %% @doc Receive Message from client and send it to XNest
 websocket_handle({text, Msg}, Req, State ) ->
 	XNestPid = State#state.xnest_pid,
-lager:info("some one send a message:~ts", [Msg]),
+lager:info("ip: ~p send a message:~ts", [element(8, Req), Msg]),
 	xnest:input(XNestPid, {self(), text, {'normal', Msg}}),			%% Use xnest API to send message
 	{ok, Req, State};
 
@@ -115,11 +118,17 @@ websocket_terminate(_Reason, _Req, State) ->
 parse_xnest_name(Req) ->
 	cowboy_req:qs_val(<<"xnest">>, Req, <<>>).
 
+%% @doc Parse client nickName from HTTP Req
+-spec parse_nickname(req()) -> {binary(), req()}.
+parse_nickname(Req) ->
+	cowboy_req:qs_val(<<"nickname">>, Req, <<"潜水员">>).
+
 %% @doc Join a xnest 
--spec join_xnest(binary()) -> {ok, pid()}.
-join_xnest(XNestName) ->
+-spec join_xnest(binary(), binary()) -> {ok, pid()}.
+join_xnest(XNestName, NickName) ->
 	{ok, XNestPid} = xnest_manager:get_xnest(XNestName),   %% I can know what format will be return by xnest_manager
-	{ok, JoinResult} = xnest:join(XNestPid, self()),
+lager:info("~s", [NickName]),
+	{ok, JoinResult} = xnest:join(XNestPid, self(), NickName),
 	xnest:input(XNestPid, {self(), text, {'join', JoinResult}}),			%% Use xnest API to send join message
 	{ok, XNestPid}.
 
