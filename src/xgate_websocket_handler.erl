@@ -48,6 +48,7 @@ websocket_init(_TransportName, Req, _Opts) ->
 	},
 	Req3 = cowboy_req:set_resp_header(<<"access-control-allow-origin">>, <<"*">>, Req2),
 	self() ! {'member_count'},		%% send a command to self 
+	self() ! {'members'},		%% send a command to self 
 	{ok, Req3, State}.
 
 
@@ -78,8 +79,19 @@ websocket_info({'self'}, Req, State) ->
 	ResponseMsg = make_response(self(), State#state.xnest_name, {'self', pid2binary(self())}),
 	{reply, {text, ResponseMsg}, Req, State};
 
+
 %% @private
 %% @doc Receive members command from self 
+websocket_info({'members'}, Req, State) ->
+	XNestPid = State#state.xnest_pid,
+	{ok, _Members} = xnest:members(XNestPid),
+	Members = [ [{<<"pid">>, pid2binary(Pid)}, {<<"nickname">>, Name}] ||{Pid, Name} <- _Members],
+	ResponseMsg = make_response(self(), State#state.xnest_name, {'members', Members}),
+	{reply, {text, ResponseMsg}, Req, State};
+
+
+%% @private
+%% @doc Receive member_count command from self 
 websocket_info({'member_count'}, Req, State) ->
 	XNestPid = State#state.xnest_pid,
 	{ok, Count} = xnest:status(XNestPid, client_counts),
@@ -128,8 +140,8 @@ parse_nickname(Req) ->
 join_xnest(XNestName, NickName) ->
 	{ok, XNestPid} = xnest_manager:get_xnest(XNestName),   %% I can know what format will be return by xnest_manager
 lager:info("~s", [NickName]),
-	{ok, JoinResult} = xnest:join(XNestPid, self(), NickName),
-	xnest:input(XNestPid, {self(), text, {'join', JoinResult}}),			%% Use xnest API to send join message
+	{ok, _JoinResult} = xnest:join(XNestPid, self(), NickName),
+	xnest:input(XNestPid, {self(), text, {'join', NickName}}),			%% Use xnest API to send join message
 	{ok, XNestPid}.
 
 
