@@ -3,7 +3,7 @@
 
 %% API.
 -export([start_link/0, stop/1]).
--export([join/2, leave/2, input/2, status/1, status/2, members/1, history/2]).
+-export([join/2, join/3, leave/2, input/2, status/1, status/2, members/1, history/2]).
 
 %% gen_server.
 -export([init/1]).
@@ -18,7 +18,8 @@
     idel_time
 }).
 -record(client_info, {
-    pid
+    pid,
+    bindings
 }).
 
 -include("lager.hrl").
@@ -40,7 +41,10 @@ stop(XNestPid) ->
 %% @doc Join a xnest.
 -spec join(pid(), pid()) -> {ok, binary()} | {error, binary()}.
 join(XNestPid, ClientPid) ->
-    gen_server:call(XNestPid, {join, ClientPid}).
+    join(XNestPid, ClientPid, "").
+-spec join(pid(), pid(), term()) -> {ok, binary()} | {error, binary()}.
+join(XNestPid, ClientPid, Bindings) ->
+    gen_server:call(XNestPid, {join, ClientPid, Bindings}).
 
 %% @doc Leave a xnest.
 -spec leave(pid(), pid()) -> {ok, binary()} | {error, binary()}.
@@ -97,6 +101,19 @@ handle_call({join, ClientPid}, _From, State) ->
 
     {reply, JoinedResult, State};
 
+handle_call({join, ClientPid, Bindings}, _From, State) ->
+    Clients = State#state.clients,
+
+    NewClient = {ClientPid, #client_info{pid = ClientPid, bindings = Bindings}},
+    %ClientPidStr = pid_to_list(ClientPid),
+
+    %%ets:insert return only true, consider to add try/catch
+    ets:insert(Clients, NewClient),
+    %JoinedResult = {ok, iolist_to_binary([ClientPidStr, " is successfully joined the xnest!"])},
+    JoinedResult = {ok, <<" is successfully joined the xnest!">>},
+
+    {reply, JoinedResult, State};
+
 handle_call({leave, ClientPid}, _From, State) ->
     Clients = State#state.clients,
     %ClientPidStr = pid_to_list(ClientPid),
@@ -115,7 +132,7 @@ handle_call({status}, _From, State) ->
 handle_call({members}, _From, State) ->
     ClientsEts = State#state.clients,
     Clients = ets:tab2list(ClientsEts),
-    Members = [  ClientPid || {ClientPid, _ClientInfo} <- Clients],
+    Members = [ {ClientInfo#client_info.pid, ClientInfo#client_info.bindings} || {_ClientPid, ClientInfo} <- Clients],
 	%Members = [[{<<"pid">>, <<"pidvalue">>}, {<<"name">>,<<"namevalue">>}], [{<<"pid">>,<<"pid3">>}, {<<"name">>,<<"username2">>}]], %%needtodo: get real data
 	{reply, {ok, Members}, State};
     
