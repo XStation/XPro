@@ -146,7 +146,7 @@ lager:info("~ts", [NickName]),
 
 
 %% @doc generate response 
--spec make_response(pid(), binary(), binary()) -> json().
+-spec make_response(pid(), binary(), {binary(), binary()}) -> json().
 make_response(FromPid, Xnest, {Type, Msg}) ->
 	Time = time2binary(erlang:localtime()),
 	From = pid2binary(FromPid),

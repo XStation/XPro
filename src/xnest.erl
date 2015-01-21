@@ -52,7 +52,7 @@ leave(XNestPid, ClientPid) ->
     gen_server:call(XNestPid, {leave, ClientPid}).
 
 %% @doc Leave a xnest.
--spec input(pid(), {pid(), atom(), binary()}) -> {ok, binary()} | {error, binary()}.
+-spec input(pid(), {pid(), atom(), any()}) -> {ok, binary()} | {error, binary()}.
 input(XNestPid, {From, text, Message}) ->
     gen_server:cast(XNestPid, {From, text, Message}).
 

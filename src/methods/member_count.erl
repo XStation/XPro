@@ -19,6 +19,6 @@ do(Params) ->
 lager:info("before xnestname :~p", [Params]),
 	XNestName = proplists:get_value(<<"xnest">>, Params),
 lager:info("xnestname :~p", [XNestName]),
-        {ok, XNestPid} = xnest_manager:get_xnest(XNestName),
-        {ok, Count} = xnest:status(XNestPid, client_counts),
-        Count.
+	{ok, XNestPid} = xnest_manager:get_xnest(XNestName),
+	{ok, Count} = xnest:status(XNestPid, client_counts),
+	Count.
