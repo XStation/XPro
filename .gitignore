@@ -5,3 +5,5 @@ ebin/*
 erl_crash.dump
 .erlang.mk.packages.v2
 .xpro.plt
+console.log
+error.log

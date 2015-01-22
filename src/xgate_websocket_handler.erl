@@ -139,7 +139,6 @@ parse_nickname(Req) ->
 -spec join_xnest(binary(), binary()) -> {ok, pid()}.
 join_xnest(XNestName, NickName) ->
 	{ok, XNestPid} = xnest_manager:get_xnest(XNestName),   %% I can know what format will be return by xnest_manager
-lager:info("~ts", [NickName]),
 	{ok, _JoinResult} = xnest:join(XNestPid, self(), NickName),
 	xnest:input(XNestPid, {self(), text, {'join', NickName}}),			%% Use xnest API to send join message
 	{ok, XNestPid}.
