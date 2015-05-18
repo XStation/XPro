@@ -7,3 +7,5 @@ erl_crash.dump
 .xpro.plt
 console.log
 error.log
+console.log.*
+error.log.*

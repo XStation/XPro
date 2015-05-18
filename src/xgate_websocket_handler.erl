@@ -136,20 +136,13 @@ parse_nickname(Req) ->
 	%%cowboy_req:qs_val(<<"nickname">>, Req, unicode:characters_to_binary("潜水员", unicode, utf8)).
 	{NickName, _Req} = case cowboy_req:qs_val(<<"nickname">>, Req, <<>>) of
 		{<<>>, Req1} ->
-			cowboy_req:cookie(<<"nickname">>, Req1, rand_nickname());
+			cowboy_req:cookie(<<"nickname">>, Req1, nickname:rand());
 		{Nick, Req1} -> 
 			{Nick, Req1}
 	end,
 	% set nickname to cookie
 	Req_ = cowboy_req:set_resp_cookie(<<"nickname">>, NickName, [], _Req),
 	{NickName, Req_}.
-
-
-rand_nickname() ->
-	Names = ["叶莎尔", "黑野兽", "热血青年", "相声大师", "鸡手鸭脚", "牛逼大将"],
-	{_, T, _} = now(),
-	M = (T rem 6)+1,
-	unicode:characters_to_binary(lists:nth(M, Names), unicode, utf8).
 
 
 %% @doc Join a xnest 
