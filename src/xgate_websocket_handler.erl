@@ -56,10 +56,9 @@ websocket_init(_TransportName, Req, _Opts) ->
 %% @private
 %% @doc Receive Message from client and send it to XNest
 websocket_handle({text, Msg}, Req, State ) ->
-	XNestPid = State#state.xnest_pid,
-lager:info("ip: ~p send a message:~ts", [element(8, Req), Msg]),
-	xnest:input(XNestPid, {self(), text, {'normal', Msg}}),			%% Use xnest API to send message
-	{ok, Req, State};
+	lager:info("ip: ~p send a message:~ts", [element(8, Req), Msg]),
+	{_, NewState} = parse_msg(Msg, State),			%%parse  message and do it with type
+	{ok, Req, NewState};
 
 %% @private
 %% @doc Receive Message from client and send it to XNest, But unused
@@ -182,3 +181,35 @@ time2binary({{Y, M, D}, {H, I, S}}) ->
 %% @doc pid to binary
 -spec pid2binary(pid()) -> binary().
 pid2binary(Pid) -> list_to_binary(pid_to_list(Pid)).
+
+
+%% @doc change nickname 
+-spec change_nickname(binary(), any()) -> binary() | ok.
+change_nickname(NewName, State) -> 
+	XNestPid = State#state.xnest_pid,
+    {ok, _Result} = xnest:change_binding(XNestPid, self(), NewName),		%% use xnest API change_binding to change name 
+	xnest:input(XNestPid, {self(), text, {'changename', NewName}}),			%% Use xnest API to send changename message
+	ok.
+
+
+%% @doc parse_msg
+%% @doc you can do something here in particular 
+-spec parse_msg(binary(), any()) -> binary() | ok.
+parse_msg(RawMessage, State) -> 
+	Result = binary:split(RawMessage, <<":">>),
+lager:info("Result of split :", [Result]),
+	case Result of 
+		[<<"@changename">>, Name] ->
+			change_nickname(Name, State);
+		_ ->
+			XNestPid = State#state.xnest_pid,
+			xnest:input(XNestPid, {self(), text, {'normal', RawMessage}})			%% Use xnest API to send message
+	end,
+	{ok, State}.
+
+
+
+
+
+
+
