@@ -197,7 +197,7 @@ change_nickname(NewName, State) ->
 -spec parse_msg(binary(), any()) -> binary() | ok.
 parse_msg(RawMessage, State) -> 
 	Result = binary:split(RawMessage, <<":">>),
-lager:info("Result of split :", [Result]),
+	%lager:info("Result of split : ~p", [Result]),
 	case Result of 
 		[<<"@changename">>, Name] ->
 			change_nickname(Name, State);
