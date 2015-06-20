@@ -3,7 +3,7 @@
 
 %% API.
 -export([start_link/0, stop/1]).
--export([join/2, join/3, leave/2, input/2, status/1, status/2, members/1, history/2]).
+-export([join/2, join/3, leave/2, change_binding/3, input/2, status/1, status/2, members/1, history/2]).
 
 %% gen_server.
 -export([init/1]).
@@ -33,43 +33,60 @@
 -spec start_link() -> {ok, pid()}.
 start_link() ->
 	gen_server:start_link(?MODULE, [], []).
+
+
 %% @doc Start the xnest gen_server.
 -spec stop(pid()) -> {ok, stopped}.
 stop(XNestPid) ->
 	gen_server:call(XNestPid, {stop}).
 
+
 %% @doc Join a xnest.
 -spec join(pid(), pid()) -> {ok, binary()} | {error, binary()}.
 join(XNestPid, ClientPid) ->
     join(XNestPid, ClientPid, <<"">>).
+
 -spec join(pid(), pid(), term()) -> {ok, binary()} | {error, binary()}.
 join(XNestPid, ClientPid, Bindings) ->
     gen_server:call(XNestPid, {join, ClientPid, Bindings}).
+
 
 %% @doc Leave a xnest.
 -spec leave(pid(), pid()) -> {ok, binary()} | {error, binary()}.
 leave(XNestPid, ClientPid) ->
     gen_server:call(XNestPid, {leave, ClientPid}).
 
+
+%% @doc change bindings.
+-spec change_binding(pid(), pid(), term()) -> {ok, binary()} | {error, binary()}.
+change_binding(XNestPid, ClientPid, Bindings) ->
+    gen_server:call(XNestPid, {'change_binding', ClientPid, Bindings}).
+
+
+
 %% @doc Leave a xnest.
 -spec input(pid(), {pid(), atom(), any()}) -> {ok, binary()} | {error, binary()}.
 input(XNestPid, {From, text, Message}) ->
     gen_server:cast(XNestPid, {From, text, Message}).
+
 
 %% @doc Get the number of clients in a xnest.
 -spec status(pid(), atom()) -> {ok, binary()} | {error, binary()}.
 status(XNestPid, client_counts) ->
     gen_server:call(XNestPid, {status, client_counts}).
 
+
 %% @doc Get the total status of a xnest.
 -spec status(pid())-> {ok, binary()} | {error, binary()}.
 status(XNestPid) ->
     gen_server:call(XNestPid, {status}).
 
+
 %% @doc Get members of a xnest.
 -spec members(pid())-> {ok, list()} | {error, binary()}.
 members(XNestPid) ->
     gen_server:call(XNestPid, {members}).
+
 
 %% @doc Get history of a xnest.
 -spec history(pid(), number())-> {ok, list()} | {error, binary()}.
@@ -80,6 +97,7 @@ history(_XNestPid, _Count) ->
 		  ],
     %%gen_server:call(XNestPid, {history, Count}).
     {ok, FadeHistory}.
+
 
 %% gen_server.
 init([]) ->
@@ -103,16 +121,26 @@ handle_call({join, ClientPid}, _From, State) ->
 
 handle_call({join, ClientPid, Bindings}, _From, State) ->
     Clients = State#state.clients,
-
     NewClient = {ClientPid, #client_info{pid = ClientPid, bindings = Bindings}},
     %ClientPidStr = pid_to_list(ClientPid),
-
     %%ets:insert return only true, consider to add try/catch
     ets:insert(Clients, NewClient),
     %JoinedResult = {ok, iolist_to_binary([ClientPidStr, " is successfully joined the xnest!"])},
     JoinedResult = {ok, <<" is successfully joined the xnest!">>},
-
     {reply, JoinedResult, State};
+
+
+handle_call({'change_binding', ClientPid, Bindings}, _From, State) ->
+    Clients = State#state.clients,
+    NewClient = {ClientPid, #client_info{pid = ClientPid, bindings = Bindings}},
+    %ClientPidStr = pid_to_list(ClientPid),
+    %%ets:insert return only true, consider to add try/catch
+    ets:insert(Clients, NewClient),			%% insert a binding will be replaced, because ets table's type  is "set" 
+    %JoinedResult = {ok, iolist_to_binary([ClientPidStr, " is successfully joined the xnest!"])},
+    Result = {ok, <<" change binding successfully!">>},
+    {reply, Result, State};
+
+
 
 handle_call({leave, ClientPid}, _From, State) ->
     Clients = State#state.clients,
