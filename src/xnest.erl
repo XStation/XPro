@@ -188,7 +188,7 @@ handle_cast({From, text, Message}, State) ->
     end,
     {Y, M, D} = date(),
     Date = list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0B", [Y, M, D])),
-    NewHistory = lists:append(SubHistory, [[{<<"from">>, From}, {<<"payload">>, Message}, {<<"send_time">>, Date}]]),
+    NewHistory = lists:append(SubHistory, [[{<<"from">>, list_to_binary(pid_to_list(From))}, {<<"payload">>, Message}, {<<"send_time">>, Date}]]),
 
     %%TBD, use lists:foldr for deploy message is not effective, we should think about another way.
     Clients = State#state.clients,
