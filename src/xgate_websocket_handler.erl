@@ -49,6 +49,7 @@ websocket_init(_TransportName, Req, _Opts) ->
 	Req3 = cowboy_req:set_resp_header(<<"access-control-allow-origin">>, <<"*">>, Req2),
 	self() ! {'member_count'},		%% send a command to self 
 	self() ! {'members'},		%% send a command to self 
+	%self() ! {'history'},		%% send a command to self 
 	{ok, Req3, State}.
 
 
@@ -56,7 +57,7 @@ websocket_init(_TransportName, Req, _Opts) ->
 %% @private
 %% @doc Receive Message from client and send it to XNest
 websocket_handle({text, Msg}, Req, State ) ->
-	lager:info("ip: ~p send a message:~ts", [element(8, Req), Msg]),
+	lager:info("xnestpid: ~p ,ip: ~p send a message:~ts", [State#state.xnest_pid, element(8, Req), Msg]),
 	parse_msg(Msg, State),			%%parse  message and do it with type
 	{ok, Req, State};
 
@@ -96,6 +97,18 @@ websocket_info({'member_count'}, Req, State) ->
 	{ok, Count} = xnest:status(XNestPid, client_counts),
 	ResponseMsg = make_response(self(), State#state.xnest_name, {'member_count', Count}),
 	{reply, {text, ResponseMsg}, Req, State};
+
+
+%% @private
+%% @doc Receive history command from self 
+websocket_info({'history'}, Req, State) ->
+	XNestPid = State#state.xnest_pid,
+	{ok, History} = xnest:history(XNestPid, 10),
+	ResponseMsg = make_response(self(), State#state.xnest_name, {'history', History}),
+	{reply, {text, ResponseMsg}, Req, State};
+
+
+
 
 %% @private
 %% @doc Receive Message from xnest and send it to client
@@ -140,7 +153,7 @@ parse_nickname(Req) ->
 			{Nick, Req1}
 	end,
 	% set nickname to cookie
-	Req_ = cowboy_req:set_resp_cookie(<<"nickname">>, NickName, [], _Req),
+	Req_ = cowboy_req:set_resp_cookie(<<"nickname">>, NickName, [{max_age, 3600}], _Req),
 	{NickName, Req_}.
 
 
@@ -158,12 +171,16 @@ join_xnest(XNestName, NickName) ->
 make_response(FromPid, Xnest, {Type, Msg}) ->
 	Time = time2binary(erlang:localtime()),
 	From = pid2binary(FromPid),
+lager:debug("~p", [Msg]),
 	Frame = [ {<<"from">>, From}
 		,{<<"xnest">>, Xnest}
 		,{<<"type">>, Type}
 		,{<<"payload">>, Msg}
 		,{<<"send_time">>, Time}
 	],
+lager:debug("~p", [Frame]),
+lager:debug("~p", [FromPid]),
+lager:debug("~p", [self()]),
 	Response = jsx:encode(Frame),
 	Response.
 
