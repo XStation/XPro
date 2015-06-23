@@ -145,7 +145,7 @@ handle_call({'change_binding', ClientPid, Bindings}, _From, State) ->
 
 
 handle_call({history, _Count}, _From, State) ->
-    History = State#state.history,
+    History = lists:reverse(State#state.history),
     {reply, {ok, History}, State};
 
 handle_call({leave, ClientPid}, _From, State) ->
@@ -178,18 +178,6 @@ handle_call(_Request, _From, State) ->
 
 %handle_cast
 handle_cast({From, text, Message}, State) ->
-    History = State#state.history,
-    SubHistory = case length(History) =:= ?HISTORY_LEN of
-        true ->
-            [ _H|T ] = History,
-            T;
-        false ->
-            History
-    end,
-    {Y, M, D} = date(),
-    Date = list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0B", [Y, M, D])),
-    NewHistory = lists:append(SubHistory, [[{<<"from">>, list_to_binary(pid_to_list(From))}, {<<"payload">>, Message}, {<<"send_time">>, Date}]]),
-
     %%TBD, use lists:foldr for deploy message is not effective, we should think about another way.
     Clients = State#state.clients,
     DeployFun = fun({Client, _ClientInfo}, AccIn) ->
@@ -212,7 +200,20 @@ handle_cast({From, text, Message}, State) ->
     catch _:_ ->
         {{error, <<"Error occured when deploy message!">>}, State}
     end,
-	{noreply, NewState#state{history=NewHistory}};
+
+    History = State#state.history,
+    SubHistory = case length(History) =:= ?HISTORY_LEN of
+        true ->
+            [ _H|T ] = History,
+            T;
+        false ->
+            History
+    end,
+    {Y, M, D} = date(),
+    Date = list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0B", [Y, M, D])),
+    NewHistory = lists:append(SubHistory, [[{<<"from">>, list_to_binary(pid_to_list(From))}, {<<"payload">>, Message}, {<<"send_time">>, Date}]]),
+
+    {noreply, NewState#state{history=NewHistory}};
 
 handle_cast(_Msg, State) ->
 	{noreply, State}.
