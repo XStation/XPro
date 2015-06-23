@@ -179,8 +179,6 @@ lager:debug("~p", [Msg]),
 		,{<<"send_time">>, Time}
 	],
 lager:debug("~p", [Frame]),
-lager:debug("~p", [FromPid]),
-lager:debug("~p", [self()]),
 	Response = jsx:encode(Frame),
 	Response.
 
