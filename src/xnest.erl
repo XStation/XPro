@@ -14,6 +14,7 @@
 -export([code_change/3]).
 
 -record(state, {
+    history,
     clients,
     idel_time
 }).
@@ -26,6 +27,7 @@
 
 -define(TTL, 5000).
 -define(IDEL_TIMEOUT, 600000).
+-define(HISTORY_LEN, 10).
 
 %% API.
 
@@ -90,20 +92,21 @@ members(XNestPid) ->
 
 %% @doc Get history of a xnest.
 -spec history(pid(), number())-> {ok, list()} | {error, binary()}.
-history(_XNestPid, _Count) ->
+history(XNestPid, Count) ->
     %%可能直接调用hisotry模块的函数
-    FadeHistory = [[{<<"from">>, <<"<0.1.0">>}, {<<"payload">>, <<"我来了">>}, {<<"send_time">>, <<"2014-12-27">>}] 
-		  ,[{<<"from">>, <<"<0.1.0">>}, {<<"payload">>, <<"我来了">>}, {<<"send_time">>, <<"2014-12-27">>}]
-		  ],
-    %%gen_server:call(XNestPid, {history, Count}).
-    {ok, FadeHistory}.
+    %%FadeHistory = [[{<<"from">>, <<"<0.1.0">>}, {<<"payload">>, <<"我来了">>}, {<<"send_time">>, <<"2014-12-27">>}] 
+    %%    	  ,[{<<"from">>, <<"<0.1.0">>}, {<<"payload">>, <<"我来了">>}, {<<"send_time">>, <<"2014-12-27">>}]
+    %%    	  ],
+    %%{ok, FadeHistory}.
+    gen_server:call(XNestPid, {history, Count}).
 
 
 %% gen_server.
 init([]) ->
+    History = [],
     Clients = ets:new(xnest, [set]),
     erlang:send_after(?TTL, self(), {tick}),
-	{ok, #state{clients=Clients, idel_time=0}}.
+    {ok, #state{history=History, clients=Clients, idel_time=0}}.
 
 %handle_call
 handle_call({join, ClientPid}, _From, State) ->
@@ -141,6 +144,9 @@ handle_call({'change_binding', ClientPid, Bindings}, _From, State) ->
     {reply, Result, State};
 
 
+handle_call({history, _Count}, _From, State) ->
+    History = State#state.history,
+    {reply, {ok, History}, State};
 
 handle_call({leave, ClientPid}, _From, State) ->
     Clients = State#state.clients,
@@ -172,6 +178,18 @@ handle_call(_Request, _From, State) ->
 
 %handle_cast
 handle_cast({From, text, Message}, State) ->
+    History = State#state.history,
+    SubHistory = case length(History) =:= ?HISTORY_LEN of
+        true ->
+            [ _H|T ] = History,
+            T;
+        false ->
+            History
+    end,
+    {Y, M, D} = date(),
+    Date = list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0B", [Y, M, D])),
+    NewHistory = lists:append(SubHistory, [[{<<"from">>, From}, {<<"payload">>, Message}, {<<"send_time">>, Date}]]),
+
     %%TBD, use lists:foldr for deploy message is not effective, we should think about another way.
     Clients = State#state.clients,
     DeployFun = fun({Client, _ClientInfo}, AccIn) ->
@@ -194,7 +212,7 @@ handle_cast({From, text, Message}, State) ->
     catch _:_ ->
         {{error, <<"Error occured when deploy message!">>}, State}
     end,
-	{noreply, NewState};
+	{noreply, NewState#state{history=NewHistory}};
 
 handle_cast(_Msg, State) ->
 	{noreply, State}.
