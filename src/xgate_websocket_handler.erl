@@ -76,7 +76,6 @@ websocket_handle(_Data, Req, State) ->
 %% @doc Receive command from self, and send self message (like pid) to js client 
 websocket_info({'self'}, Req, State) ->
 	ResponseMsg = make_response(self(), State#state.xnest_name, {'self', pid2binary(self())}),
-	lager:debug("send a self msg to client :~p", [ResponseMsg]),
 	{reply, {text, ResponseMsg}, Req, State};
 
 
