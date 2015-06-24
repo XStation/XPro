@@ -203,7 +203,8 @@ handle_cast({From, text, Message}, State) ->
 
     History = State#state.history,
     NewHistory = case Message of
-        {'normal', _} ->
+		%only put in the message body, exclude Type
+        {'normal', Msg} ->
             SubHistory = case length(History) =:= ?HISTORY_LEN of
                 true ->
                     [ _H|T ] = History,
@@ -213,7 +214,7 @@ handle_cast({From, text, Message}, State) ->
             end,
             {Y, M, D} = date(),
             Date = list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0B", [Y, M, D])),
-            lists:append(SubHistory, [[{<<"from">>, list_to_binary(pid_to_list(From))}, {<<"payload">>, Message}, {<<"send_time">>, Date}]]);
+            lists:append(SubHistory, [[{<<"from">>, list_to_binary(pid_to_list(From))}, {<<"payload">>, Msg}, {<<"send_time">>, Date}]]);
         _ ->
             History
     end,
