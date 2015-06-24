@@ -49,7 +49,7 @@ websocket_init(_TransportName, Req, _Opts) ->
 	Req3 = cowboy_req:set_resp_header(<<"access-control-allow-origin">>, <<"*">>, Req2),
 	self() ! {'member_count'},		%% send a command to self 
 	self() ! {'members'},		%% send a command to self 
-	%self() ! {'history'},		%% send a command to self 
+	self() ! {'history'},		%% send a command to self 
 	{ok, Req3, State}.
 
 
@@ -171,14 +171,12 @@ join_xnest(XNestName, NickName) ->
 make_response(FromPid, Xnest, {Type, Msg}) ->
 	Time = time2binary(erlang:localtime()),
 	From = pid2binary(FromPid),
-lager:debug("~p", [Msg]),
 	Frame = [ {<<"from">>, From}
 		,{<<"xnest">>, Xnest}
 		,{<<"type">>, Type}
 		,{<<"payload">>, Msg}
 		,{<<"send_time">>, Time}
 	],
-lager:debug("~p", [Frame]),
 	Response = jsx:encode(Frame),
 	Response.
 
