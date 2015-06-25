@@ -145,7 +145,8 @@ handle_call({'change_binding', ClientPid, Bindings}, _From, State) ->
 
 
 handle_call({history, _Count}, _From, State) ->
-    History = lists:reverse(State#state.history),
+    %History = lists:reverse(State#state.history), % no need to reverse
+    History = State#state.history, % no need to reverse
     {reply, {ok, History}, State};
 
 handle_call({leave, ClientPid}, _From, State) ->
