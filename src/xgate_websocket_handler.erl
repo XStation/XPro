@@ -153,7 +153,7 @@ parse_nickname(Req) ->
 			{Nick, Req1}
 	end,
 	% set nickname to cookie
-	Req_ = cowboy_req:set_resp_cookie(<<"nickname">>, NickName, [{max_age, 3600}], _Req),
+	Req_ = cowboy_req:set_resp_cookie(<<"nickname">>, NickName, [{max_age, 86400}], _Req),
 	{NickName, Req_}.
 
 
