@@ -57,7 +57,7 @@ websocket_init(_TransportName, Req, _Opts) ->
 %% @private
 %% @doc Receive Message from client and send it to XNest
 websocket_handle({text, Msg}, Req, State ) ->
-	lager:info("xnestpid: ~p ,ip: ~p send a message:~ts", [State#state.xnest_pid, element(8, Req), Msg]),
+	lager:info("xnestpid: ~p , selfpid: ~p , ip: ~p send a message:~ts", [State#state.xnest_pid, self(), element(8, Req), Msg]),
 	parse_msg(Msg, State),			%%parse  message and do it with type
 	{ok, Req, State};
 
