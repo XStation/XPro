@@ -68,7 +68,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%=============internal functions=====================
 
 loadName() ->
-	FilePath = "/opt/apps/xpro/priv/nicknames",
+	FilePath = code:priv_dir(xpro) ++ "/nicknames",
 lager:info("loadname...."),
 	{ok, Contents} = file:read_file(FilePath),
 	Names = binary:split(Contents, <<"\n">>, [global]),
