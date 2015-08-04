@@ -193,14 +193,22 @@ handle_cast({From, text, Message}, State) ->
         end
     end,
 
-    {_DeployMsgResult, NewState} = try
+%%=========================
         %%TBD, here change sync to asyn simply by spawn, consider it again.
         %_DeadClients = ets:foldr(DeployFun, [], Clients),
         spawn(ets, foldl, [DeployFun, [], Clients]),
-        {{ok, <<"Message successfully deployed!">>}, State}
-    catch _:_ ->
-        {{error, <<"Error occured when deploy message!">>}, State}
-    end,
+    	{_DeployMsgResult, NewState} = {{ok, <<"Message successfully deployed!">>}, State},
+%=========================
+%%%=========================
+%    {_DeployMsgResult, NewState} = try
+%        %%TBD, here change sync to asyn simply by spawn, consider it again.
+%        %_DeadClients = ets:foldr(DeployFun, [], Clients),
+%        spawn(ets, foldl, [DeployFun, [], Clients]),
+%        {{ok, <<"Message successfully deployed!">>}, State}
+%    catch _:_ ->
+%        {{error, <<"Error occured when deploy message!">>}, State}
+%    end,
+%%=========================
 
     History = State#state.history,
     NewHistory = case Message of
