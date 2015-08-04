@@ -42,7 +42,7 @@ init([]) ->
 
 %% @private
 handle_call({add_robot_to_xnest, XNestPid}, _From, State) ->
-    NickName = <<"robot">>,
+    NickName = <<"小M机器人">>,
     {ok, _JoinResult} = xnest:join(XNestPid, self(), NickName),
     {reply, ok, State#state{xnest=XNestPid}};
 
