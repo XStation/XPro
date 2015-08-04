@@ -11,6 +11,7 @@ start(_Type, _Args) ->
 	lager:start(),
 	application:start(sasl),
 	application:start(crypto),
+	application:start(inets),
 	application:start(ranch),
 	application:start(cowlib),
 	application:start(cowboy),

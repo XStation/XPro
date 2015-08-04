@@ -230,7 +230,7 @@ handle_info({tick}, State) ->
     ClientCounts = ets:info(State#state.clients, size),
     IdelTimeout = State#state.idel_time,
     NewIdelTimeout = case ClientCounts of
-        0 -> IdelTimeout + ?TTL;
+        1 -> IdelTimeout + ?TTL;
         _ -> 0
     end,
 

@@ -60,6 +60,8 @@ handle_call({get_xnest, XNestName}, _From,  State) ->
 			ExistXNest;
 		_ ->
 			{ok, NewXNest} = xnest:start_link(),
+	                {ok, RobotPid} = xnest_robot:start_link(),
+			xnest_robot:add_robot_to_xnest(RobotPid, NewXNest),
 			ets:insert_new(?TAB, {XNestName, NewXNest}),
 			ets:insert_new(?PID_INDEX, {NewXNest, XNestName}),
 			NewXNest	
