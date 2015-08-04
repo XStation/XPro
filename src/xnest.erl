@@ -104,7 +104,7 @@ history(XNestPid, Count) ->
 %% gen_server.
 init([]) ->
     History = [],
-    Clients = ets:new(xnest, [set]),
+    Clients = ets:new(xnest, [set, public]),
     erlang:send_after(?TTL, self(), {tick}),
     {ok, #state{history=History, clients=Clients, idel_time=0}}.
 
