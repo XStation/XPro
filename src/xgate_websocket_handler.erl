@@ -153,7 +153,12 @@ parse_nickname(Req) ->
 			{Nick, Req1}
 	end,
 	% set nickname to cookie
-	Req_ = cowboy_req:set_resp_cookie(<<"nickname">>, NickName, [{max_age, 86400}, {domain, <<"xpro.im">>}], _Req),
+	lager:warning("~ts", [NickName]),
+%% The cookie value cannot contain any of the following characters:
+%%   ,; \t\r\n\013\014
+	SafeNick = binary:replace(NickName, [<<" ">>, <<",">>, <<";">>], <<>>, [global]),
+	lager:warning("~ts", [SafeNick]),
+	Req_ = cowboy_req:set_resp_cookie(<<"nickname">>, SafeNick, [{max_age, 86400}, {domain, <<"xpro.im">>}], _Req),
 	{NickName, Req_}.
 
 
