@@ -42,7 +42,7 @@ init([]) ->
 
 %% @private
 handle_call({add_robot_to_xnest, XNestPid}, _From, State) ->
-    NickName = "robot",
+    NickName = <<"robot">>,
     {ok, _JoinResult} = xnest:join(XNestPid, self(), NickName),
     {reply, ok, State#state{xnest=XNestPid}};
 
@@ -58,7 +58,7 @@ handle_info({_From, text, {normal, Msg}}, State) ->
     case Msg of
         <<"@robot", Question/binary>> ->
             Answer = get_answer(Question),
-	    lager:info("question:~p, answer:~p", [Question, Answer]),
+	    	lager:info("question:~ts, answer:~ts", [Question, Answer]),
             xnest:input(State#state.xnest, {self(), text, {normal, Answer}});
 	_ ->
 	    noreply
