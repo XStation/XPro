@@ -5,7 +5,7 @@
 %% API.
 -export([start_link/0]).
 -export([add_robot_to_xnest/2]).
--export([get_answer/1]).
+-export([get_answer/2]).
 
 %% gen_server.
 -export([init/1]).
@@ -57,7 +57,7 @@ handle_cast(_Msg, State) ->
 handle_info({_From, text, {normal, Msg}}, State) ->
     case Msg of
         <<"@robot", Question/binary>> ->
-            Answer = get_answer(Question),
+            Answer = get_answer(Question, _From),
 	    	lager:info("question:~ts, answer:~ts", [Question, Answer]),
             xnest:input(State#state.xnest, {self(), text, {normal, Answer}});
 	_ ->
@@ -78,22 +78,29 @@ code_change(_OldVsn, State, _Extra) ->
 %%------------------------------------------------------------------------------------------------
 %% Internal.
 %%------------------------------------------------------------------------------------------------
-get_answer(Question_) ->
+get_answer(Question_, SessionId) ->
     Question = trim(Question_),
     Url = "http://apis.baidu.com/turing/turing/turing",
-    Qs = "?key=ae177163c8d16dc28787f8e8badd6e7c&info=" ++ binary_to_list(Question),
+    Qs = "?key=ae177163c8d16dc28787f8e8badd6e7c&info=" ++ binary_to_list(Question) ++ pid_to_list(SessionId),
     Answer = case httpc:request(get, {Url++Qs, [{"apikey", "864770ce98248d2562b8fecd73e69ef3"}]}, [], []) of
         {ok, {{_Version, 200, _Phrase}, _Headers, Body}} ->
             DecodedBody = jsx:decode(list_to_binary(Body)),
-	    Code = proplists:get_value(<<"code">>, DecodedBody),
-	    case Code of
-	        100000 ->
-		    proplists:get_value(<<"text">>, DecodedBody);
-		_ ->
-		    DecodedBody
+	    	Code = proplists:get_value(<<"code">>, DecodedBody),
+	    	case Code of
+	        	100000 ->
+		    		proplists:get_value(<<"text">>, DecodedBody);
+	        	40002  ->
+		    		unicode:characters_to_binary("你想和我说什么?", unicode, utf8);
+	        	200000 ->
+		    		Text = proplists:get_value(<<"text">>, DecodedBody),
+		    		PicUrl = proplists:get_value(<<"url">>, DecodedBody),
+		    		Title = unicode:characters_to_binary("点我呀!~", unicode, utf8),
+					<<Text/binary, "\n <a target='_blank' href='", PicUrl/binary, "' >",Title/binary, "</a>">>;
+				_ ->
+		    		DecodedBody
             end;
-	_ ->
-	    <<"I am dead.">>
+		_ ->
+	    	<<"I am dead.">>
     end,
     Answer.
 
