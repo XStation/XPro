@@ -28,10 +28,13 @@ start(_Type, _Args) ->
 
 	PrivDir = code:priv_dir(xpro),
 	{ok, _} = cowboy:start_https(https, 10, 
-				[{port, 443}
-				, {cacertfile, PrivDir ++ "/../ssl/cowboy-ca.crt"}
-				, {certfile, PrivDir ++ "/../ssl/server.crt"}
-				, {keyfile, PrivDir ++ "/../ssl/server.key"}],
+				[{port, 8443}
+				%, {cacertfile, PrivDir ++ "/../ssl/cowboy-ca.crt"}
+				%, {certfile, PrivDir ++ "/../ssl/server.crt"}
+				%, {keyfile, PrivDir ++ "/../ssl/server.key"}],
+				, {cacertfile, PrivDir ++ "/../ssl/1_cross_Intermediate.crt"}
+				, {certfile, PrivDir ++ "/../ssl/3_user_xpro.im.crt"}
+				, {keyfile, PrivDir ++ "/../ssl/4_user_xpro.im.key"}],
 				[{env, [{dispatch, Dispatch}]}]
 			),
 	
