@@ -56,10 +56,14 @@ handle_cast(_Msg, State) ->
 %% @private
 handle_info({_From, text, {normal, Msg}}, State) ->
     case Msg of
-        <<"@robot", Question/binary>> ->
-            Answer = get_answer(Question, _From),
-	    	lager:info("question:~ts, answer:~ts", [Question, Answer]),
-            xnest:input(State#state.xnest, {self(), text, {normal, Answer}});
+     <<"@robot", Question/binary>> ->
+        Answer = get_answer(Question, _From),
+	    lager:info("question:~ts, answer:~ts", [Question, Answer]),
+        xnest:input(State#state.xnest, {self(), text, {normal, Answer}});
+     <<"@", Question/binary>> ->
+        Answer = get_answer(Question, _From),
+	    lager:info("question:~ts, answer:~ts", [Question, Answer]),
+        xnest:input(State#state.xnest, {self(), text, {normal, Answer}});
 	_ ->
 	    noreply
     end,
