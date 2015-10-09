@@ -71,6 +71,8 @@ websocket_handle({binary, Bin}, Req, State) ->
 
 %% @private
 websocket_handle(_Data, Req, State) ->
+%{OriginUrl, Req} = cowboy_req:header(<<"origin">>, Req),
+%lager:warning("xnestpid:~p(~p), selfpid: ~p, ip: ~p send a message:~p", [State#state.xnest_pid, OriginUrl, self(), element(8, Req), _Data]),
 	{ok, Req, State}.
 
 

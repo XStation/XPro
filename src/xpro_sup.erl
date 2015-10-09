@@ -16,6 +16,11 @@ init([]) ->
 	         {nickname, start_link, []},
 	         permanent, 5000, worker, [nickname]
 	},
-	
+	%RiakPoolSup = {riak_pool_sup,
+    %                {riak_pool_sup, start_link, []},
+    %                permanent, 5000, supervisor, [riak_pool_sup]
+    %           },
+	%
+	%Procs = [XNestManager, NickName, RiakPoolSup],
 	Procs = [XNestManager, NickName],
 	{ok, {{one_for_one, 1, 5}, Procs}}.

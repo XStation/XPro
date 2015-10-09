@@ -9,5 +9,19 @@
 		stdlib
 	]},
 	{mod, {xpro_app, []}},
-	{env, []}
+	{env, [
+            {riak_pool, [
+                {local, [
+                    {size, 20},
+                    {max_overflow, 0}
+                ], [
+                    {hostname, "127.0.0.1"},
+                    {port, 8087}
+                    %{username, "db2"},
+                    %{password, "abc123"}
+                ]}
+            ]}
+
+        ]
+	}
 ]}.
