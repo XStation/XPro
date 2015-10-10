@@ -2,7 +2,7 @@
 -behaviour(gen_server).
 
 %% API.
--export([start_link/0, stop/1]).
+-export([start_link/1, stop/1]).
 -export([join/2, join/3, leave/2, change_binding/3, input/2, status/1, status/2, members/1, history/2]).
 
 %% gen_server.
@@ -14,6 +14,7 @@
 -export([code_change/3]).
 
 -record(state, {
+    xnest_name,
     history,
     clients,
     idel_time
@@ -32,9 +33,9 @@
 %% API.
 
 %% @doc Start the xnest gen_server.
--spec start_link() -> {ok, pid()}.
-start_link() ->
-	gen_server:start_link(?MODULE, [], []).
+-spec start_link(binary()) -> {ok, pid()}.
+start_link(XnestName) ->
+	gen_server:start_link(?MODULE, [XnestName], []).
 
 
 %% @doc Start the xnest gen_server.
@@ -102,11 +103,11 @@ history(XNestPid, Count) ->
 
 
 %% gen_server.
-init([]) ->
+init([XnestName]) ->
     History = [],
     Clients = ets:new(xnest, [set, public]),
     erlang:send_after(?TTL, self(), {tick}),
-    {ok, #state{history=History, clients=Clients, idel_time=0}}.
+    {ok, #state{xnest_name=XnestName, history=History, clients=Clients, idel_time=0}}.
 
 %handle_call
 handle_call({join, ClientPid}, _From, State) ->
@@ -210,6 +211,7 @@ handle_cast({From, text, Message}, State) ->
 %    end,
 %%=========================
 
+%%==========临时存放的记录, 以后移植到riak中去===========
     History = State#state.history,
     NewHistory = case Message of
 		%only put in the message body, exclude Type
@@ -223,10 +225,14 @@ handle_cast({From, text, Message}, State) ->
             end,
             {Y, M, D} = date(),
             Date = list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0B", [Y, M, D])),
+			%%****临时插入一行代码, 写入记录到riak中************
+			%xhistory:store(State#state.xnest_name, list_to_binary(pid_to_list(From)), Msg),
+			%%**************************************************
             lists:append(SubHistory, [[{<<"from">>, list_to_binary(pid_to_list(From))}, {<<"payload">>, Msg}, {<<"send_time">>, Date}]]);
         _ ->
             History
     end,
+%%=================================
 
     {noreply, NewState#state{history=NewHistory}};
 
