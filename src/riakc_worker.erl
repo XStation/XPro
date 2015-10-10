@@ -44,7 +44,7 @@ handle_call(_Request, _From, State) ->
 
 handle_cast({set, Object}, #state{conn=Conn}=State) ->
     ok = riakc_pb_socket:put(Conn, Object),
-    poolboy:checkin(pool1, self()),
+    poolboy:checkin(local, self()),
     {noreply, State};
 
 handle_cast({get, {Bucket, Key}}, #state{conn=Conn}=State) ->
@@ -75,21 +75,22 @@ code_change(_OldVsn, State, _Extra) ->
 %%=======api function ===========
 sync_set(Type, Bucket, Key, Value)->
     RiakObject = riakc_obj:new({Type, Bucket}, Key, Value),
-    Pid = poolboy:checkout(pool1),
+    Pid = poolboy:checkout(local),
     Ret = gen_server:call(Pid, {set, RiakObject}),
-    poolboy:checkin(pool1, Pid),
+    poolboy:checkin(local, Pid),
     Ret.
 async_set(Type, Bucket, Key, Value)->
     RiakObject = riakc_obj:new({Type, Bucket}, Key, Value),
-    Pid = poolboy:checkout(pool1),
+lager:info("~p", [RiakObject]),
+    Pid = poolboy:checkout(local),
     gen_server:cast(Pid, {set, RiakObject}).
 
 
 
 
 sync_get(Type, Bucket, Key)->
-    Pid = poolboy:checkout(pool1),
+    Pid = poolboy:checkout(local),
     Value = gen_server:call(Pid, {get, {Type, Bucket, Key}}),
-    poolboy:checkin(pool1, Pid),
+    poolboy:checkin(local, Pid),
     Value.
 
