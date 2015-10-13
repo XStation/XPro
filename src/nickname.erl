@@ -38,8 +38,8 @@ init([]) ->
 handle_call(rand, _From, State) ->
 	Tree = State#state.gbtree,
 	Length = State#state.length,
-	T = erlang:unique_integer([positive]),
-    Key = (T rem Length)+1,
+	{_, _, T} = os:timestamp(),
+    Key = (T rem Length) + 1,
 	Name = gb_trees:get(Key, Tree),
     Name_ = unicode:characters_to_binary(Name, unicode, utf8),
 	{reply, Name_, State};
