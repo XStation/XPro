@@ -12,7 +12,7 @@
 	{env, [
             {riak_pool, [
                 {local, [
-                    {size, 20},
+                    {size, 10},
                     {max_overflow, 0}
                 ], [
                     {hostname, "127.0.0.1"},
@@ -21,7 +21,14 @@
                     %{password, "abc123"}
                 ]}
             ]}
-
-        ]
-	}
+			, {redis_pools, [
+                {localredis, [
+                    {size, 20},
+                    {max_overflow, 0}
+                ], [
+                    {hostname, "127.0.0.1"},
+                    {port, 6379}
+                ]}
+            ]}
+	]}
 ]}.

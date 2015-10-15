@@ -1,5 +1,5 @@
--include("lager.hrl").
--module(riakc_worker).
+-include("../lager.hrl").
+-module(riak_worker).
 -behaviour(gen_server).
 -behaviour(poolboy_worker).
 
