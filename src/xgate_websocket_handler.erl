@@ -58,7 +58,7 @@ websocket_init(_TransportName, Req, _Opts) ->
 %% @doc Receive Message from client and send it to XNest
 websocket_handle({text, Msg}, Req, State ) ->
 	{OriginUrl, Req} = cowboy_req:header(<<"origin">>, Req),
-	lager:info("xnestpid:~p(~p), selfpid: ~p, ip: ~p send a message:~ts", [State#state.xnest_pid, OriginUrl, self(), element(8, Req), Msg]),
+	lager:info("xnestpid:~p(~p), OriginUrl:~p, selfpid: ~p, ip: ~p, msg:~ts", [State#state.xnest_pid, State#state.xnest_name, OriginUrl, self(), element(8, Req), Msg]),
 	parse_msg(Msg, State),			%%parse  message and do it with type
 	{ok, Req, State};
 
