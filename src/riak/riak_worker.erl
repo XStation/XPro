@@ -31,12 +31,15 @@ handle_call({set, Object}, _From, #state{conn=Conn}=State) ->
     {reply, Ret, State};
 
 handle_call({get, {Type, Bucket, Key}}, _From, #state{conn=Conn}=State) ->
-    {ok, Obj} = riakc_pb_socket:get(Conn, {Type, Bucket}, Key),
-    lager:error("~p", [Obj]),
-    
-    Value = riakc_obj:get_value(Obj),
-    lager:info("~p", [Value]),
-    {reply, Value, State};
+	Result = case riakc_pb_socket:get(Conn, {Type, Bucket}, Key) of 
+    	{ok, Obj} -> 
+    		Value = riakc_obj:get_value(Obj),
+			Value;
+		_Other -> 
+			_Other
+	end,
+    lager:info("~p from bucket ~p, key ~p", [Result, Bucket, Key]),
+    {reply, Result, State};
 
 handle_call(_Request, _From, State) ->
     {reply, nomatchfunc, State}.
@@ -79,9 +82,11 @@ sync_set(Type, Bucket, Key, Value)->
     Ret = gen_server:call(Pid, {set, RiakObject}),
     poolboy:checkin(local, Pid),
     Ret.
+
 async_set(Type, Bucket, Key, Value)->
+lager:warning("~p ~p ~p", [Bucket, Key, Value]),
     RiakObject = riakc_obj:new({Type, Bucket}, Key, Value),
-lager:info("~p", [RiakObject]),
+lager:warning("~p", [RiakObject]),
     Pid = poolboy:checkout(local),
     gen_server:cast(Pid, {set, RiakObject}).
 

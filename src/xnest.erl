@@ -225,10 +225,15 @@ handle_cast({From, text, Message}, State) ->
             end,
             {Y, M, D} = date(),
             Date = list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0B", [Y, M, D])),
+			TermMsg = [{<<"from">>, list_to_binary(pid_to_list(From))}, {<<"payload">>, Msg}, {<<"send_time">>, Date}],
 			%%****临时插入一行代码, 写入记录到riak中************
-			%xhistory:store(State#state.xnest_name, list_to_binary(pid_to_list(From)), Msg),
+			try
+				xhistory:store(State#state.xnest_name, TermMsg)
+			catch _:_ ->
+				lager:error("store history to riak error!!!")
+			end,
 			%%**************************************************
-            lists:append(SubHistory, [[{<<"from">>, list_to_binary(pid_to_list(From))}, {<<"payload">>, Msg}, {<<"send_time">>, Date}]]);
+            lists:append(SubHistory, [TermMsg]);
         _ ->
             History
     end,
