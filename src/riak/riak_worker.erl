@@ -38,7 +38,7 @@ handle_call({get, {Type, Bucket, Key}}, _From, #state{conn=Conn}=State) ->
 		_Other -> 
 			_Other
 	end,
-    lager:info("~p from bucket ~p, key ~p", [Result, Bucket, Key]),
+    lager:info("value from bucket ~p, key ~p", [ Bucket, Key]),
     {reply, Result, State};
 
 handle_call(_Request, _From, State) ->
@@ -84,9 +84,7 @@ sync_set(Type, Bucket, Key, Value)->
     Ret.
 
 async_set(Type, Bucket, Key, Value)->
-lager:warning("~p ~p ~p", [Bucket, Key, Value]),
     RiakObject = riakc_obj:new({Type, Bucket}, Key, Value),
-lager:warning("~p", [RiakObject]),
     Pid = poolboy:checkout(local),
     gen_server:cast(Pid, {set, RiakObject}).
 

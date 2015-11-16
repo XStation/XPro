@@ -21,9 +21,10 @@ init([]) ->
                     permanent, 5000, supervisor, [riak_pool_sup]
                },
 	
-	RedisPoolSup = {redis_pool_sup,
-                    {redis_pool_sup, start_link, []},
-                    permanent, 5000, supervisor, [redis_pool_sup]
-               },
-	Procs = [XNestManager, NickName, RiakPoolSup, RedisPoolSup],
+	%RedisPoolSup = {redis_pool_sup,
+    %                {redis_pool_sup, start_link, []},
+    %                permanent, 5000, supervisor, [redis_pool_sup]
+    %           },
+	%Procs = [XNestManager, NickName, RiakPoolSup, RedisPoolSup],
+	Procs = [XNestManager, NickName, RiakPoolSup ],
 	{ok, {{one_for_one, 1, 5}, Procs}}.
