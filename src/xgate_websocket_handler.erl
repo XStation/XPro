@@ -106,7 +106,7 @@ websocket_info({'member_count'}, Req, State) ->
 %% @doc Receive history command from self 
 websocket_info({'history'}, Req, State) ->
 	XNestPid = State#state.xnest_pid,
-	{ok, History} = xnest:history(XNestPid, 1),
+	{ok, History} = xnest:history(XNestPid, 0),
 	ResponseMsg = make_response(self(), State#state.xnest_name, {'history', History}),
 	{reply, {text, ResponseMsg}, Req, State};
 

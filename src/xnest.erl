@@ -93,13 +93,13 @@ members(XNestPid) ->
 
 %% @doc Get history of a xnest.
 -spec history(pid(), number())-> {ok, list()} | {error, binary()}.
-history(XNestPid, Count) ->
+history(XNestPid, Cursor) ->
     %%可能直接调用hisotry模块的函数
     %%FadeHistory = [[{<<"from">>, <<"<0.1.0">>}, {<<"payload">>, <<"我来了">>}, {<<"send_time">>, <<"2014-12-27">>}] 
     %%    	  ,[{<<"from">>, <<"<0.1.0">>}, {<<"payload">>, <<"我来了">>}, {<<"send_time">>, <<"2014-12-27">>}]
     %%    	  ],
     %%{ok, FadeHistory}.
-    gen_server:call(XNestPid, {history, Count}).
+    gen_server:call(XNestPid, {history, Cursor}).
 
 
 %% gen_server.

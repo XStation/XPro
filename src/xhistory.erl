@@ -15,6 +15,7 @@ store(Xnest, Msg) ->
 	%Key = <<Y_/binary,"-",M_/binary,"-", D_/binary, " ", H_/binary, ":", I_/binary,":",S_/binary>>,
 	%Value = <<Y_/binary,"-",M_/binary,"-", D_/binary, " ", H_/binary, ":", I_/binary,":",S_/binary,"||", UserName/binary,"||", Msg/binary>>,
 	LastIndex= last_index(Xnest), 
+lager:info("last index is :~p", [LastIndex]),
 	History = ?MODULE:fetch(Xnest, LastIndex),
 	
 	Len = length(History),
@@ -27,7 +28,14 @@ lager:info("history length:~p", [Len]),
 	riak_worker:async_set(<<"default">>, Xnest, LastIndex, erlang:term_to_binary([Msg|History])).
 
 fetch(Xnest, Cursor) when is_integer(Cursor) ->
-	fetch(Xnest, integer_to_binary(Cursor));
+	LastIndex = binary_to_integer(last_index(Xnest)),
+	Tmp = LastIndex - Cursor,
+	ReversCursor = case Tmp > 0 of
+		true -> Tmp;
+		_ -> 1
+	end,
+		
+	fetch(Xnest, integer_to_binary(ReversCursor));
 
 fetch(Xnest, Cursor)->
 	case riak_worker:sync_get(<<"default">>, Xnest, Cursor) of 
