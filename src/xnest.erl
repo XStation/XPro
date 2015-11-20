@@ -147,11 +147,10 @@ handle_call({'change_binding', ClientPid, Bindings}, _From, State) ->
 
 handle_call({history, Cursor}, _From, State) ->
     %History = State#state.history, % no need to reverse
-lager:info("xnestname ~p", [State#state.xnest_name]),
 	History = try
 		xhistory:fetch(State#state.xnest_name, Cursor)
 	catch _:_ ->
-		lager:error("fetch history from riak error "),
+		lager:error("fetch history from riak error, xnestname ~p", [State#state.xnest_name]),
 		[]
 	end,
     {reply, {ok, lists:reverse(History)}, State};

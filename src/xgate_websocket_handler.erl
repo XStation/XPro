@@ -49,7 +49,7 @@ websocket_init(_TransportName, Req, _Opts) ->
 	Req3 = cowboy_req:set_resp_header(<<"access-control-allow-origin">>, <<"*">>, Req2),
 	self() ! {'member_count'},		%% send a command to self 
 	self() ! {'members'},		%% send a command to self 
-	self() ! {'history'},		%% send a command to self 
+	self() ! {'history', 0},		%% send a command to self 
 	{ok, Req3, State}.
 
 
@@ -104,9 +104,9 @@ websocket_info({'member_count'}, Req, State) ->
 
 %% @private
 %% @doc Receive history command from self 
-websocket_info({'history'}, Req, State) ->
+websocket_info({'history', Cursor}, Req, State) ->
 	XNestPid = State#state.xnest_pid,
-	{ok, History} = xnest:history(XNestPid, 0),
+	{ok, History} = xnest:history(XNestPid, Cursor),
 	ResponseMsg = make_response(self(), State#state.xnest_name, {'history', History}),
 	{reply, {text, ResponseMsg}, Req, State};
 
@@ -222,6 +222,8 @@ parse_msg(RawMessage, State) ->
 	case Result of 
 		[<<"@changename">>, Name] ->
 			change_nickname(Name, State);
+		[<<"@history">>, Cursor] ->
+			self() ! {'history', binary_to_integer(Cursor)};		%% send a command to self 
 		_ ->
 			XNestPid = State#state.xnest_pid,
 			xnest:input(XNestPid, {self(), text, {'normal', RawMessage}})		%% Use xnest API to send message
