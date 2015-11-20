@@ -38,7 +38,7 @@ handle_call({get, {Type, Bucket, Key}}, _From, #state{conn=Conn}=State) ->
 		_Other -> 
 			_Other
 	end,
-    lager:info("value from bucket ~p, key ~p", [ Bucket, Key]),
+    %lager:info("value from bucket ~p, key ~p", [ Bucket, Key]),
     {reply, Result, State};
 
 handle_call(_Request, _From, State) ->
