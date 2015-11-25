@@ -65,6 +65,7 @@ websocket_handle({text, Msg}, Req, State ) ->
 %% @private
 %% @doc Receive Message from client and send it to XNest, But unused
 websocket_handle({binary, Bin}, Req, State) ->
+lager:warning("receive binary ~p", [Bin]),
 	XNestPid = State#state.xnest_pid,
 	xnest:input(XNestPid, {self(), binary, Bin}),		%% Use xnest API to send message
 	{ok, Req, State};
@@ -111,13 +112,18 @@ websocket_info({'history', Cursor}, Req, State) ->
 	{reply, {text, ResponseMsg}, Req, State};
 
 
-
-
 %% @private
 %% @doc Receive Message from xnest and send it to client
 websocket_info({FromPid, text, Msg}, Req, State) ->
 	ResponseMsg = make_response(FromPid, State#state.xnest_name, Msg),
 	{reply, {text, ResponseMsg}, Req, State};
+
+
+%% @private
+%% @doc Receive Binary from xnest and send it to client
+websocket_info({_FromPid, binary, Bin}, Req, State) ->
+	%ResponseMsg = make_response(FromPid, State#state.xnest_name, Bin),
+	{reply, {text, Bin}, Req, State};
 
 %% @private
 %% @doc Receive timeout event , But now unused

@@ -183,7 +183,7 @@ handle_call({stop}, _From, State) ->
 handle_call(_Request, _From, State) ->
 	{reply, ignored, State}.
 
-%handle_cast
+%handle_cast text
 handle_cast({From, text, Message}, State) ->
     %%TBD, use lists:foldr for deploy message is not effective, we should think about another way.
     Clients = State#state.clients,
@@ -237,7 +237,60 @@ handle_cast({From, text, Message}, State) ->
 
     {noreply, NewState};
 
+
+
+%handle_cast binary 
+handle_cast({From, binary, Bin}, State) when is_binary(Bin) ->
+    %%TBD, use lists:foldr for deploy message is not effective, we should think about another way.
+    Clients = State#state.clients,
+    DeployFun = fun({Client, _ClientInfo}, AccIn) ->
+        case is_process_alive(Client) of
+            true ->
+                Client ! {From, binary, Bin},
+                AccIn;
+            false ->
+                %%TBD, here should inform manager client ws is dead
+                ets:delete(Clients, Client),
+                [Client|AccIn]
+        end
+    end,
+
+%%=========================
+        %%TBD, here change sync to asyn simply by spawn, consider it again.
+        %_DeadClients = ets:foldr(DeployFun, [], Clients),
+        spawn(ets, foldl, [DeployFun, [], Clients]),
+    	{_DeployMsgResult, NewState} = {{ok, <<"Binary successfully deployed!">>}, State},
+%=========================
+%%%=========================
+%    {_DeployMsgResult, NewState} = try
+%        %%TBD, here change sync to asyn simply by spawn, consider it again.
+%        %_DeadClients = ets:foldr(DeployFun, [], Clients),
+%        spawn(ets, foldl, [DeployFun, [], Clients]),
+%        {{ok, <<"Message successfully deployed!">>}, State}
+%    catch _:_ ->
+%        {{error, <<"Error occured when deploy message!">>}, State}
+%    end,
+%%=========================
+
+%%==========根据消息类型的不同把必要的消息持久化到riak中去===========
+     {Y, M, D} = date(),
+     Date = list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0B", [Y, M, D])),
+	 TermMsg = [{<<"from">>, list_to_binary(pid_to_list(From))}, {<<"payload">>, Bin}, {<<"send_time">>, Date}],
+	 %%*************记录到riak中************
+	 try
+	 	xhistory:store(State#state.xnest_name, TermMsg)
+	 catch _:_ ->
+	 	lager:error("store binary history to riak error!!!")
+	 end,
+	 %%*********************************************
+%%=================================
+
+    {noreply, NewState};
+
+
+
 handle_cast(_Msg, State) ->
+lager:info("receive different msg:< ~p >", [_Msg]),
 	{noreply, State}.
 
 %handle_info
