@@ -216,35 +216,26 @@ handle_cast({From, text, Message}, State) ->
 %    end,
 %%=========================
 
-%%==========临时存放的记录, 以后移植到riak中去===========
-    History = State#state.history,
-    NewHistory = case Message of
+%%==========根据消息类型的不同把必要的消息持久化到riak中去===========
+    case Message of
 		%only put in the message body, exclude Type
         {'normal', Msg} ->
-            SubHistory = case length(History) =:= ?HISTORY_LEN of
-                true ->
-                    [ _H|T ] = History,
-                    T;
-                false ->
-                    History
-            end,
             {Y, M, D} = date(),
             Date = list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0B", [Y, M, D])),
 			TermMsg = [{<<"from">>, list_to_binary(pid_to_list(From))}, {<<"payload">>, Msg}, {<<"send_time">>, Date}],
-			%%****临时插入一行代码, 写入记录到riak中************
+			%%****插入一行代码, 写入记录到riak中************
 			try
 				xhistory:store(State#state.xnest_name, TermMsg)
 			catch _:_ ->
 				lager:error("store history to riak error!!!")
-			end,
+			end;
 			%%**************************************************
-            lists:append(SubHistory, [TermMsg]);
         _ ->
-            History
+            nothing
     end,
 %%=================================
 
-    {noreply, NewState#state{history=NewHistory}};
+    {noreply, NewState};
 
 handle_cast(_Msg, State) ->
 	{noreply, State}.
