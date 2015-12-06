@@ -161,6 +161,7 @@ parse_nickname(Req) ->
 		{Nick, Req1} -> 
 			{Nick, Req1}
 	end,
+lager:info("~ts", [NickName]),
 	% set nickname to cookie
 %	lager:warning("~ts", [NickName]),
 %% The cookie value cannot contain any of the following characters:
@@ -225,13 +226,20 @@ change_nickname(NewName, State) ->
 parse_msg(RawMessage, State) -> 
 	Result = binary:split(RawMessage, <<":">>),
 	%lager:info("Result of split : ~p", [Result]),
+	XNestPid = State#state.xnest_pid,
 	case Result of 
 		[<<"@changename">>, Name] ->
 			change_nickname(Name, State);
 		[<<"@history">>, Cursor] ->
 			self() ! {'history', binary_to_integer(Cursor)};		%% send a command to self 
+		[<<"@to">>, NameAndMsg] ->
+			case binary:split(NameAndMsg, <<"|">>) of 
+				[Pid, Message] -> 
+					Pid_ = list_to_pid(binary_to_list(Pid)),
+					Pid_ ! {self(), text, {'private', Message}};
+				_ -> xnest:input(XNestPid, {self(), text, {'normal', RawMessage}})       %% Use xnest API to send message
+			end;
 		_ ->
-			XNestPid = State#state.xnest_pid,
 			xnest:input(XNestPid, {self(), text, {'normal', RawMessage}})		%% Use xnest API to send message
 	end.
 
