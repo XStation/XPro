@@ -1,5 +1,7 @@
 XPro
 ====
+[![Build Status](https://secure.travis-ci.org/leo-project/leo_backend_db.png?branch=develop)](https://travis-ci.org/XStation/XPro)
+
 
 A Niubility Information Exchange System
 
