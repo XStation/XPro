@@ -161,7 +161,6 @@ parse_nickname(Req) ->
 		{Nick, Req1} -> 
 			{Nick, Req1}
 	end,
-lager:info("~ts", [NickName]),
 	% set nickname to cookie
 %	lager:warning("~ts", [NickName]),
 %% The cookie value cannot contain any of the following characters:
@@ -237,6 +236,13 @@ parse_msg(RawMessage, State) ->
 				[Pid, Message] -> 
 					Pid_ = list_to_pid(binary_to_list(Pid)),
 					Pid_ ! {self(), text, {'private', Message}};
+				_ -> xnest:input(XNestPid, {self(), text, {'normal', RawMessage}})       %% Use xnest API to send message
+			end;
+		[<<"@call">>, NameAndMsg] ->
+			case binary:split(NameAndMsg, <<"|">>) of 
+				[_Pid, Message] -> 
+					%Pid_ = list_to_pid(binary_to_list(Pid)),
+					xnest:input(XNestPid, {self(), text, {'call', Message}});
 				_ -> xnest:input(XNestPid, {self(), text, {'normal', RawMessage}})       %% Use xnest API to send message
 			end;
 		_ ->
