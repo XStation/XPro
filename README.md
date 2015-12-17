@@ -1,5 +1,7 @@
 XPro
 ====
+[![Build Status](https://secure.travis-ci.org/XStation/XPro.png?branch=master)](https://travis-ci.org/XStation/XPro)
+
 
 A Niubility Information Exchange System
 
