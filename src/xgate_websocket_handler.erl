@@ -65,9 +65,7 @@ websocket_handle({text, Msg}, Req, State ) ->
 %% @private
 %% @doc Receive Message from client and send it to XNest, But unused
 websocket_handle({binary, Bin}, Req, State) ->
-lager:warning("receive binary ~p", [Bin]),
-	XNestPid = State#state.xnest_pid,
-	xnest:input(XNestPid, {self(), binary, Bin}),		%% Use xnest API to send message
+	parse_binary(Bin, State),
 	{ok, Req, State};
 
 %% @private
@@ -250,7 +248,12 @@ parse_msg(RawMessage, State) ->
 	end.
 
 
-
+parse_binary(Bin, State) ->
+	<<BinType:1/binary, RestBin/binary>> = Bin,
+lager:warning("binary Type ~p", [BinType]),
+	XNestPid = State#state.xnest_pid,
+	xnest:input(XNestPid, {self(), binary, {audio, RestBin}}),		%% Use xnest API to send message
+	ok.
 
 
 

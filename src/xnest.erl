@@ -70,7 +70,10 @@ change_binding(XNestPid, ClientPid, Bindings) ->
 %% @doc Leave a xnest.
 -spec input(pid(), {pid(), atom(), any()}) -> {ok, binary()} | {error, binary()}.
 input(XNestPid, {From, text, Message}) ->
-    gen_server:cast(XNestPid, {From, text, Message}).
+    gen_server:cast(XNestPid, {From, text, Message});
+
+input(XNestPid, {From, binary, Binary}) ->
+    gen_server:cast(XNestPid, {From, binary, Binary}).
 
 
 %% @doc Get the number of clients in a xnest.
@@ -240,52 +243,17 @@ handle_cast({From, text, Message}, State) ->
 
 
 %handle_cast binary 
-handle_cast({From, binary, Bin}, State) when is_binary(Bin) ->
-    %%TBD, use lists:foldr for deploy message is not effective, we should think about another way.
-    Clients = State#state.clients,
-    DeployFun = fun({Client, _ClientInfo}, AccIn) ->
-        case is_process_alive(Client) of
-            true ->
-                Client ! {From, binary, Bin},
-                AccIn;
-            false ->
-                %%TBD, here should inform manager client ws is dead
-                ets:delete(Clients, Client),
-                [Client|AccIn]
-        end
-    end,
-
-%%=========================
-        %%TBD, here change sync to asyn simply by spawn, consider it again.
-        %_DeadClients = ets:foldr(DeployFun, [], Clients),
-        spawn(ets, foldl, [DeployFun, [], Clients]),
-    	{_DeployMsgResult, NewState} = {{ok, <<"Binary successfully deployed!">>}, State},
-%=========================
-%%%=========================
-%    {_DeployMsgResult, NewState} = try
-%        %%TBD, here change sync to asyn simply by spawn, consider it again.
-%        %_DeadClients = ets:foldr(DeployFun, [], Clients),
-%        spawn(ets, foldl, [DeployFun, [], Clients]),
-%        {{ok, <<"Message successfully deployed!">>}, State}
-%    catch _:_ ->
-%        {{error, <<"Error occured when deploy message!">>}, State}
-%    end,
-%%=========================
-
-%%==========根据消息类型的不同把必要的消息持久化到riak中去===========
-     {Y, M, D} = date(),
-     Date = list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0B", [Y, M, D])),
-	 TermMsg = [{<<"from">>, list_to_binary(pid_to_list(From))}, {<<"payload">>, Bin}, {<<"send_time">>, Date}],
-	 %%*************记录到riak中************
-	 try
-	 	xhistory:store(State#state.xnest_name, TermMsg)
-	 catch _:_ ->
-	 	lager:error("store binary history to riak error!!!")
-	 end,
-	 %%*********************************************
-%%=================================
-
-    {noreply, NewState};
+handle_cast({From, binary, {audio, Bin}}, State) when is_binary(Bin) ->
+	{A_, B_, C_} = now(),
+	A = integer_to_binary(A_),
+	B = integer_to_binary(B_),
+	C = integer_to_binary(C_),
+	Key = <<A/binary, B/binary, C/binary>>,
+	Bucket = State#state.xnest_name,
+	riak_worker:async_set(<<"default">>, Bucket, Key, Bin),
+	NewMsg = {audio, <<"http://meet.xpro.im/", Bucket/binary, "/", Key/binary>>},
+	xnest:input(self(), {From, text, {audio, NewMsg}}),
+    {noreply, State};
 
 
 
