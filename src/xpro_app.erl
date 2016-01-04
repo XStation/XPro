@@ -20,6 +20,7 @@ start(_Type, _Args) ->
 		{'_', [
 			{"/xgate/websocket/:xnest_name", xgate_websocket_handler, []},
 			{"/xgate/http", xgate_http_handler, []},
+			{"/:bucket/:key", xgate_binary_handler, []},
 			{"/[...]", cowboy_static, {priv_dir, 'xpro', <<"">>}}
 		]}
 	]),
