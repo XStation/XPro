@@ -248,6 +248,8 @@ parse_msg(RawMessage, State) ->
 	end.
 
 
+%% @doc parse_binary
+%% @doc you can parse binary message here in particular 
 parse_binary(Bin, State) ->
 	<<BinType:1/binary, RestBin/binary>> = Bin,
 lager:warning("binary Type ~p", [BinType]),
