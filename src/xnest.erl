@@ -243,7 +243,7 @@ handle_cast({From, text, Message}, State) ->
 
 
 %handle_cast binary 
-handle_cast({From, binary, {audio, Bin}}, State) when is_binary(Bin) ->
+handle_cast({From, binary, {BinType, Bin}}, State) when is_binary(Bin) ->
 	{A_, B_, C_} = now(),
 	A = integer_to_binary(A_),
 	B = integer_to_binary(B_),
@@ -251,9 +251,9 @@ handle_cast({From, binary, {audio, Bin}}, State) when is_binary(Bin) ->
 	Key = <<A/binary, B/binary, C/binary>>,
 	Bucket = State#state.xnest_name,
 	riak_worker:async_set(<<"default">>, Bucket, Key, Bin),
-	NewMsg = {audio, <<"http://meet.xpro.im:8080/", Bucket/binary, "/", Key/binary>>},
-lager:info("BInary url ", [NewMsg]),
-	xnest:input(self(), {From, text, {audio, NewMsg}}),
+	NewMsg = {BinType, <<"http://meet.xpro.im:8080/", Bucket/binary, "/", Key/binary>>},
+lager:info("BInary url ~p", [NewMsg]),
+	xnest:input(self(), {From, text, {BinType, NewMsg}}),
     {noreply, State};
 
 

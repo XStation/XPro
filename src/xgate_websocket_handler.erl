@@ -165,7 +165,7 @@ parse_nickname(Req) ->
 %%   ,; \t\r\n\013\014
 	SafeNick = binary:replace(NickName, [<<" ">>, <<",">>, <<";">>], <<>>, [global]),
 %	lager:warning("~ts", [SafeNick]),
-	Req_ = cowboy_req:set_resp_cookie(<<"nickname">>, SafeNick, [{max_age, 86400}, {domain, <<"xpro.im">>}], _Req),
+	Req_ = cowboy_req:set_resp_cookie(<<"nickname">>, SafeNick, [{max_age, 86400}, {domain, <<"meet.xpro.im">>}], _Req),
 	{NickName, Req_}.
 
 
@@ -251,11 +251,14 @@ parse_msg(RawMessage, State) ->
 %% @doc parse_binary
 %% @doc you can parse binary message here in particular 
 parse_binary(Bin, State) ->
-	<<BinType:1/binary, RestBin/binary>> = Bin,
+	<<BinType:8/integer-little, RestBin/binary>> = Bin,
 lager:warning("binary Type ~p", [BinType]),
 	XNestPid = State#state.xnest_pid,
-	xnest:input(XNestPid, {self(), binary, {audio, RestBin}}),		%% Use xnest API to send message
-	ok.
+	case BinType of 
+		1 -> xnest:input(XNestPid, {self(), binary, {audio, RestBin}});		%% Use xnest API to send message
+		2 -> xnest:input(XNestPid, {self(), binary, {picture, RestBin}});		%% Use xnest API to send message
+		_ -> xnest:input(XNestPid, {self(), binary, {file, RestBin}})		%% Use xnest API to send message
+	end.
 
 
 
