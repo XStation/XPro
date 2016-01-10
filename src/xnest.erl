@@ -222,17 +222,33 @@ handle_cast({From, text, Message}, State) ->
 %%==========根据消息类型的不同把必要的消息持久化到riak中去===========
     case Message of
 		%only put in the message body, exclude Type
-        {'normal', Msg} ->
-            {Y, M, D} = date(),
+        {'audio', Msg} ->
+			{Y, M, D} = date(),
             Date = list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0B", [Y, M, D])),
-			TermMsg = [{<<"from">>, list_to_binary(pid_to_list(From))}, {<<"payload">>, Msg}, {<<"send_time">>, Date}],
-			%%****插入一行代码, 写入记录到riak中************
+			TermMsg = [{<<"from">>, list_to_binary(pid_to_list(From))}, {<<"payload">>, Msg}, {<<"type">>, <<"audio">>}, {<<"send_time">>, Date}],
 			try
 				xhistory:store(State#state.xnest_name, TermMsg)
 			catch _:_ ->
 				lager:error("store history to riak error!!!")
 			end;
-			%%**************************************************
+		{'picture', Msg} ->
+			{Y, M, D} = date(),
+            Date = list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0B", [Y, M, D])),
+			TermMsg = [{<<"from">>, list_to_binary(pid_to_list(From))}, {<<"payload">>, Msg}, {<<"type">>, <<"picture">>}, {<<"send_time">>, Date}],
+			try
+				xhistory:store(State#state.xnest_name, TermMsg)
+			catch _:_ ->
+				lager:error("store history to riak error!!!")
+			end;
+        {'normal', Msg} ->
+            {Y, M, D} = date(),
+            Date = list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0B", [Y, M, D])),
+			TermMsg = [{<<"from">>, list_to_binary(pid_to_list(From))}, {<<"payload">>, Msg}, {<<"type">>, <<"text">>}, {<<"send_time">>, Date}],
+			try
+				xhistory:store(State#state.xnest_name, TermMsg)
+			catch _:_ ->
+				lager:error("store history to riak error!!!")
+			end;
         _ ->
             nothing
     end,
