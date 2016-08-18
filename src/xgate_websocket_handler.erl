@@ -39,18 +39,19 @@ init({ssl, http}, _Req, _Opts) ->
 websocket_init(_TransportName, Req, _Opts) ->
 	{XNestName, Req1} = parse_xnest_name(Req),
 	{NickName, Req2} = parse_nickname(Req1),
+	{IsStore, Req3} = parse_is_store_history(Req2),
 	self() ! {'self'},		%% send a command to self 
-	{ok, XNestPid} = join_xnest(XNestName, NickName),
+	{ok, XNestPid} = join_xnest(XNestName, [{nickname, NickName}, {is_store_history, IsStore}]),
 	State = #state{
 		nickname	= NickName,
 		xnest_name	= XNestName,
 		xnest_pid	= XNestPid
 	},
-	Req3 = cowboy_req:set_resp_header(<<"access-control-allow-origin">>, <<"*">>, Req2),
+	Req4 = cowboy_req:set_resp_header(<<"access-control-allow-origin">>, <<"*">>, Req3),
 	self() ! {'member_count'},		%% send a command to self 
 	self() ! {'members'},		%% send a command to self 
 	self() ! {'history', 0},		%% send a command to self 
-	{ok, Req3, State}.
+	{ok, Req4, State}.
 
 
 
@@ -169,10 +170,28 @@ parse_nickname(Req) ->
 	{NickName, Req_}.
 
 
+%% @doc Parse client is_store_history from HTTP Req
+-spec parse_is_store_history(req()) -> {binary(), req()}.
+parse_is_store_history(Req) ->
+	{IsStore, _Req} = case cowboy_req:qs_val(<<"is_store_history">>, Req, true ) of
+		{false, Req1} ->
+			{false, Req1};
+		{<<"false">>, Req1} -> 
+			{false, Req1};
+		{_ , Req1} -> 
+			{true, Req1}
+	end,
+lager:info("is store history ~p", [IsStore]),
+	{IsStore, _Req}.
+
+
+
+
 %% @doc Join a xnest 
 -spec join_xnest(binary(), binary()) -> {ok, pid()}.
-join_xnest(XNestName, NickName) ->
-	{ok, XNestPid} = xnest_manager:get_xnest(XNestName),   %% I can know what format will be return by xnest_manager
+join_xnest(XNestName, Options) ->
+	{ok, XNestPid} = xnest_manager:get_xnest(XNestName, Options),   %% I can know what format will be return by xnest_manager
+	NickName = proplists:get_value(nickname, Options),
 	{ok, _JoinResult} = xnest:join(XNestPid, self(), NickName),
 	xnest:input(XNestPid, {self(), text, {'join', NickName}}),			%% Use xnest API to send join message
 	{ok, XNestPid}.

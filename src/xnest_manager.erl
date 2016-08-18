@@ -4,7 +4,7 @@
 
 %% API.
 -export([start_link/0]).
--export([get_xnest/1]).
+-export([get_xnest/1, get_xnest/2]).
 -export([get_xnest_count/0]).
 
 %% gen_server.
@@ -34,8 +34,16 @@ start_link() ->
 %% @doc Get the xnest by name, a new one will be created if the specfied is not exists.
 -spec get_xnest(binary()) -> {ok, pid()}.
 get_xnest(XNestName) ->
-	XNestPid = gen_server:call(?MODULE, {get_xnest, XNestName}),
+	get_xnest(XNestName, []).
+
+
+%% @doc Get the xnest by name, a new one will be created if the specfied is not exists.
+-spec get_xnest(binary(), list()) -> {ok, pid()}.
+get_xnest(XNestName, Options) ->
+	XNestPid = gen_server:call(?MODULE, {get_xnest, XNestName, Options}),
 	{ok, XNestPid}.
+
+
 
 %% @doc Get current xnest number.
 -spec get_xnest_count() -> integer().
@@ -54,12 +62,12 @@ init([]) ->
 	{ok, #state{}}.
 
 %% @private
-handle_call({get_xnest, XNestName}, _From,  State) ->
+handle_call({get_xnest, XNestName, Options}, _From,  State) ->
 	XNest = case ets:lookup(?TAB, XNestName) of
 		[{_XNestName, ExistXNest}|_] ->
 			ExistXNest;
 		_ ->
-			{ok, NewXNest} = xnest:start_link(XNestName),
+			{ok, NewXNest} = xnest:start_link(XNestName, Options),
 	        {ok, RobotPid} = xnest_robot:start_link(),
 			xnest_robot:add_robot_to_xnest(RobotPid, NewXNest),
 			ets:insert_new(?TAB, {XNestName, NewXNest}),

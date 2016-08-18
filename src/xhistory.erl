@@ -15,11 +15,11 @@ store(Xnest, Msg) ->
 	%Key = <<Y_/binary,"-",M_/binary,"-", D_/binary, " ", H_/binary, ":", I_/binary,":",S_/binary>>,
 	%Value = <<Y_/binary,"-",M_/binary,"-", D_/binary, " ", H_/binary, ":", I_/binary,":",S_/binary,"||", UserName/binary,"||", Msg/binary>>,
 	LastIndex= last_index(Xnest), 
-lager:info("last index is :~p", [LastIndex]),
+%lager:info("last index is :~p", [LastIndex]),
 	History = ?MODULE:fetch(Xnest, LastIndex),
 	
 	Len = length(History),
-lager:info("history length:~p", [Len]),
+%lager:info("history length:~p", [Len]),
 	if 
 		Len > 50 -> update_index(Xnest, LastIndex);
 		true -> nothing

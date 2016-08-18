@@ -28,7 +28,7 @@ lager:info("Req: ~p", [Req]),
 			{Key, Req2} = cowboy_req:binding(key, Req1, <<"">>),
 			{ok, Req3} = case riak_worker:sync_get(<<"default">>, Bucket, Key) of 
 				{error,notfound} ->				
-						cowboy_req:reply(404, [{<<"Content-Type">>, <<"text/html">>}], <<"<h1>404 NOT FOUND</h1>are you kidding me?">>, Req2);
+						cowboy_req:reply(404, [{<<"Content-Type">>, <<"text/html">>}], <<"<h1>404 Not Found</h1>Are you kidding me?">>, Req2);
 				Binary ->
 						cowboy_req:reply(200, [], Binary, Req2)
 			end,

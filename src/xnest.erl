@@ -2,7 +2,7 @@
 -behaviour(gen_server).
 
 %% API.
--export([start_link/1, stop/1]).
+-export([start_link/2, stop/1]).
 -export([join/2, join/3, leave/2, change_binding/3, input/2, status/1, status/2, members/1, history/2]).
 
 %% gen_server.
@@ -15,7 +15,7 @@
 
 -record(state, {
     xnest_name,
-    history,
+    options,
     clients,
     idel_time
 }).
@@ -28,14 +28,14 @@
 
 -define(TTL, 5000).
 -define(IDEL_TIMEOUT, 600000).
--define(HISTORY_LEN, 10).
+%-define(HISTORY_LEN, 10).
 
 %% API.
 
 %% @doc Start the xnest gen_server.
--spec start_link(binary()) -> {ok, pid()}.
-start_link(XnestName) ->
-	gen_server:start_link(?MODULE, [XnestName], []).
+-spec start_link(binary(), list()) -> {ok, pid()}.
+start_link(XnestName, Options) ->
+	gen_server:start_link(?MODULE, [XnestName, Options], []).
 
 
 %% @doc Start the xnest gen_server.
@@ -101,11 +101,10 @@ history(XNestPid, Cursor) ->
 
 
 %% gen_server.
-init([XnestName]) ->
-    History = [],
+init([XnestName, Options]) ->
     Clients = ets:new(xnest, [set, public]),
     erlang:send_after(?TTL, self(), {tick}),
-    {ok, #state{xnest_name=XnestName, history=History, clients=Clients, idel_time=0}}.
+    {ok, #state{xnest_name=XnestName, options=Options, clients=Clients, idel_time=0}}.
 
 %handle_call
 handle_call({join, ClientPid}, _From, State) ->
@@ -221,7 +220,7 @@ handle_cast({From, text, Message}, State) ->
             Date = list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0B", [Y, M, D])),
 			TermMsg = [{<<"from">>, list_to_binary(pid_to_list(From))}, {<<"payload">>, Msg}, {<<"type">>, <<"audio">>}, {<<"send_time">>, Date}],
 			try
-				xhistory:store(State#state.xnest_name, TermMsg)
+				xhistory_store(State, TermMsg)
 			catch _:_ ->
 				lager:error("store history to riak error!!!")
 			end;
@@ -230,7 +229,7 @@ handle_cast({From, text, Message}, State) ->
             Date = list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0B", [Y, M, D])),
 			TermMsg = [{<<"from">>, list_to_binary(pid_to_list(From))}, {<<"payload">>, Msg}, {<<"type">>, <<"picture">>}, {<<"send_time">>, Date}],
 			try
-				xhistory:store(State#state.xnest_name, TermMsg)
+				xhistory_store(State, TermMsg)
 			catch _:_ ->
 				lager:error("store history to riak error!!!")
 			end;
@@ -239,7 +238,7 @@ handle_cast({From, text, Message}, State) ->
             Date = list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0B", [Y, M, D])),
 			TermMsg = [{<<"from">>, list_to_binary(pid_to_list(From))}, {<<"payload">>, Msg}, {<<"type">>, <<"text">>}, {<<"send_time">>, Date}],
 			try
-				xhistory:store(State#state.xnest_name, TermMsg)
+				xhistory_store(State, TermMsg)
 			catch _:_ ->
 				lager:error("store history to riak error!!!")
 			end;
@@ -297,6 +296,15 @@ terminate(_Reason, _State) ->
 
 code_change(_OldVsn, State, _Extra) ->
 	{ok, State}.
+
+%%======================internal function===================
+xhistory_store(State, TermMsg)->
+	Options = State#state.options,
+	case proplists:get_value(is_store_history, Options, undefined) of 
+		undefined -> xhistory:store(State#state.xnest_name, TermMsg);
+		true -> xhistory:store(State#state.xnest_name, TermMsg);
+		_ -> ok
+	end.
 
 %%
 %% Tests
