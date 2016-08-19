@@ -45,10 +45,11 @@ get_xnest(XNestName, Options) ->
 
 
 
-%% @doc Get current xnest number.
--spec get_xnest_count() -> integer().
+%% @doc Get current xnest info.
+-spec get_xnest_count() -> term().
 get_xnest_count() ->
-	0.
+	gen_server:call(?MODULE, {get_xnest_count}).
+
 
 %%------------------------------------------------------------------------------------------------
 %% gen_server.
@@ -75,6 +76,12 @@ handle_call({get_xnest, XNestName, Options}, _From,  State) ->
 			NewXNest	
 	end,
 	{reply, XNest, State};
+
+handle_call({get_xnest_count}, _From, State) ->
+	I = ets:info(?TAB),
+	O = ets:tab2list(?TAB),
+	{reply, {I, O}, State};
+
 
 
 handle_call(_Request, _From, State) ->

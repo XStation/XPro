@@ -181,7 +181,7 @@ parse_is_store_history(Req) ->
 		{_ , Req1} -> 
 			{true, Req1}
 	end,
-lager:info("is store history ~p", [IsStore]),
+%lager:info("is store history ~p", [IsStore]),
 	{IsStore, _Req}.
 
 
