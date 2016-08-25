@@ -60,8 +60,15 @@ websocket_init(_TransportName, Req, _Opts) ->
 websocket_handle({text, Msg}, Req, State ) ->
 	{OriginUrl, Req} = cowboy_req:header(<<"origin">>, Req),
 	lager:info("xnestpid:~p(~p), OriginUrl:~p, selfpid: ~p, ip: ~p, msg:~ts", [State#state.xnest_pid, State#state.xnest_name, OriginUrl, self(), element(8, Req), Msg]),
-	parse_msg(Msg, State),			%%parse  message and do it with type
-	{ok, Req, State};
+	try
+		parse_msg(Msg, State),			%%parse  message and do it with type
+		{ok, Req, State}
+	catch _A:_B ->
+		lager:warning("!!!!!!!!parse msg error ~p: ~p :~n xnestpid:~p(~p), OriginUrl:~p, selfpid: ~p, ip: ~p, msg:~ts", [_A, _B, State#state.xnest_pid, State#state.xnest_name, OriginUrl, self(), element(8, Req), Msg]),
+		ResponseMsg = make_response(self(), State#state.xnest_name, {'error', <<"history Cursor error">>}),
+		{reply, {text, ResponseMsg}, Req, State}
+	end;
+	
 
 %% @private
 %% @doc Receive Message from client and send it to XNest, But unused
