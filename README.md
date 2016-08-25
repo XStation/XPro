@@ -1,5 +1,4 @@
-#XPro
-## A Niubility Information Exchange System
+#XPro - A Niubility Information Exchange System
 [![Build Status](https://secure.travis-ci.org/XStation/XPro.png?branch=master)](https://travis-ci.org/XStation/XPro)
 ##For Developer
 * 可以使用make help 查看帮助
@@ -11,17 +10,16 @@ make new t=TPL n=NAME //产生出模板, 文件会自动建立在src下.
 ```
 
 * Ps:
-> 现在引入了jsx来解析json, jsx默认使用rebar, 但却不能找到项目根下的rebar, 所在在自己的环境上需要把rebar的路径export到$PATH中去.
-
+```
+现在引入了jsx来解析json, jsx默认使用rebar, 但却不能找到项目根下的rebar, 所在在自己的环境上需要把rebar的路径export到$PATH中去.
+```
 ##ChangeLog
 
 * 2014.12.5
 > ***xpro.im 诞生***
 
-
 * 2015.1.7
 > ***支持ssl***
-
 
 * 2015.1.23
 > ***版本发布***
