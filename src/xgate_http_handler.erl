@@ -60,7 +60,10 @@ terminate(_Reason, _Req, _State) ->
 -spec exec_method(binary(), list()) -> term().
 exec_method(Method, Params) ->
 	Module = dispatch:module(Method),
-	Result = Module:do(Params),
+	Result = case Module of 
+		<<"404">> -> <<"404">>;
+		_ -> Module:do(Params)
+	end,
 	Result.
 
 %% @doc generate json response 
