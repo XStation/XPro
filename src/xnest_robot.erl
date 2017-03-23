@@ -154,7 +154,10 @@ parse_view(ResponseBody) ->
 	GetList = fun(Y) ->
 		Title = proplists:get_value(<<"title">>, Y),
 		Summary = proplists:get_value(<<"summary">>, Y),
-		<<Title/binary, "</br>", Summary/binary>>
+		Url = proplists:get_value(<<"url">>, Y),
+		Detail = unicode:characters_to_binary("详情", unicode, utf8),
+		A = <<"<a href='", Url/binary, "'>", Detail/binary, "</a>">>,
+		<<Title/binary, "</br>", Summary/binary, "</br>", A/binary>>
 	end,
 
 	GetContent = fun(X) ->
