@@ -83,25 +83,47 @@ code_change(_OldVsn, State, _Extra) ->
 %% Internal.
 %%------------------------------------------------------------------------------------------------
 get_answer(Question_, SessionId) ->
+lager:info("~p", [SessionId]),
+	Session = case is_pid(SessionId) of
+		true -> list_to_binary(pid_to_list(SessionId));
+		_ -> SessionId
+	end,
     Question = trim(Question_),
-    Url = "http://apis.baidu.com/turing/turing/turing",
-    Qs = "?key=ae177163c8d16dc28787f8e8badd6e7c&info=" ++ binary_to_list(Question) ++ pid_to_list(SessionId),
-    Answer = case httpc:request(get, {Url++Qs, [{"apikey", "864770ce98248d2562b8fecd73e69ef3"}]}, [], []) of
+    Url = "https://xiaodu.baidu.com/ws",
+	_Qs = <<"{
+\"sample_name\": \"bear_brain_wireless\",
+\"isNewUser\": \"0\",
+\"request_type\": \"20\",
+\"longitude\": \"1.268496257425E7\",
+\"request_uid\": \"E60A0298D473929BA4538CBD40471C95\",
+\"app_ver\": \"2.0.0\",
+\"service_id\": \"5\",
+\"query_type\": \"0\",
+\"from_client\": \"sdk\",
+\"request_query\": \"">>,
+	Q = Question,
+	Qs_ = <<"\",
+\"cuid\": \"", Session/binary,"\",
+\"operation_system\": \"android\",
+\"latitude\": \"2558831.054261\",
+\"request_from\": \"0\",
+\"appid\": \"650DEBC2B99A4dA4\",
+\"appkey\": \"2F4B662AF2064323A16122D702160F15\",
+\"sdk_ui\": \"yes\",
+\"channel_from\":\"\"}">>,
+	Qs = <<_Qs/binary, Q/binary, Qs_/binary>>,
+
+
+    Answer = case httpc:request(post, {Url, [], "application/json", Qs}, [{ssl, [{fail_if_no_peer_cert, false}]}], []) of
         {ok, {{_Version, 200, _Phrase}, _Headers, Body}} ->
             DecodedBody = jsx:decode(list_to_binary(Body)),
-	    	Code = proplists:get_value(<<"code">>, DecodedBody),
+	    	Code = proplists:get_value(<<"status">>, DecodedBody),
 	    	case Code of
-	        	100000 ->
-		    		proplists:get_value(<<"text">>, DecodedBody);
-	        	40002  ->
-		    		unicode:characters_to_binary("你想和我说什么?", unicode, utf8);
-	        	200000 ->
-		    		Text = proplists:get_value(<<"text">>, DecodedBody),
-		    		PicUrl = proplists:get_value(<<"url">>, DecodedBody),
-		    		Title = unicode:characters_to_binary("点我呀!~", unicode, utf8),
-					<<Text/binary, "\n <a target='_blank' href='", PicUrl/binary, "' >",Title/binary, "</a>">>;
+	        	0 ->
+		    		parse_view(DecodedBody);
 				_ ->
-		    		DecodedBody
+		    		lager:info("~p", [DecodedBody]),
+	    			<<" Sorry, I Don't Understand! ">>
             end;
 		_ ->
 	    	<<"I am dead.">>
@@ -119,3 +141,38 @@ is_whitespace($\t)-> true;
 is_whitespace($\n)-> true; 
 is_whitespace($\r)-> true; 
 is_whitespace(_Else) -> false. 
+
+parse_view(ResponseBody) ->
+	Result = proplists:get_value(<<"result">>, ResponseBody),
+	Views = proplists:get_value(<<"views">>, Result),
+
+	GetThumb = fun(Y) ->
+		Thumb = proplists:get_value(<<"thumb">>, Y),
+		<<"<img src='", Thumb/binary ,"'/>">>
+	end,
+
+	GetList = fun(Y) ->
+		Title = proplists:get_value(<<"title">>, Y),
+		Summary = proplists:get_value(<<"summary">>, Y),
+		<<Title/binary, "</br>", Summary/binary>>
+	end,
+
+	GetContent = fun(X) ->
+		Type = proplists:get_value(<<"type">>, X),
+		case Type of 
+			<<"txt">> -> proplists:get_value(<<"content">>, X);
+			<<"image">> -> 
+				List = proplists:get_value(<<"list">>, X),
+				[ GetThumb(Item) || Item <- List];
+			<<"list">> -> 
+				List = proplists:get_value(<<"list">>, X),
+				[ GetList(Item) || Item <- List]
+		end
+				
+	end,
+	Content = lists:flatten([GetContent(View) || View <- Views]),
+	Concat = fun(Elem, AccIn) ->
+		<<Elem/binary, "</br></br>", AccIn/binary>>
+	end,
+	lists:foldl(Concat, <<>>, Content).
+	
